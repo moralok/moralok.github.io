@@ -29,7 +29,7 @@
 <meta property="og:image" content="https://www.moralok.com/2024/12/10/how-to-add-a-friends-links-page-non-invasively-when-using-Hexo-NexT-theme/Snipaste_2024-12-11_22-32-25.png">
 <meta property="og:image" content="https://www.moralok.com/2024/12/10/how-to-add-a-friends-links-page-non-invasively-when-using-Hexo-NexT-theme/Snipaste_2024-12-11_23-25-42.png">
 <meta property="article:published_time" content="2024-12-10T10:04:53.000Z">
-<meta property="article:modified_time" content="2025-03-03T04:37:41.280Z">
+<meta property="article:modified_time" content="2025-03-03T04:38:09.473Z">
 <meta property="article:author" content="Moralok">
 <meta property="article:tag" content="hexo">
 <meta property="article:tag" content="next theme">
@@ -235,7 +235,7 @@
         <i class="far fa-calendar-check"></i>
       </span>
       <span class="post-meta-item-text">更新于</span>
-      <time title="修改时间：2025-03-03 12:37:41" itemprop="dateModified" datetime="2025-03-03T12:37:41+08:00">2025-03-03</time>
+      <time title="修改时间：2025-03-03 12:38:09" itemprop="dateModified" datetime="2025-03-03T12:38:09+08:00">2025-03-03</time>
     </span>
 
   
@@ -287,18 +287,25 @@
 <h3 id="在首页添加友链"><a href="#在首页添加友链" class="headerlink" title="在首页添加友链"></a>在首页添加友链</h3><p>使用 <code>NexT</code> 主题的 <code>Hexo</code> 博客支持通过编辑配置文件的方式在首页添加友链，方法如下：</p>
 <ol>
 <li>在 <code>Hexo</code> 博客项目的<strong>根目录</strong>下添加 <code>NexT</code> 主题的用户配置文件 <code>_config.next.yml</code> 文件，用于覆盖主题的默认配置。这样可以避免直接修改主题目录中的默认配置文件。</li>
-<li>在 <code>_config.next.yml</code> 文件中添加配置：<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">links:</span></span><br><span class="line">  <span class="attr">LINUX DO:</span> <span class="string">https://linux.do</span></span><br><span class="line">  <span class="attr">Moralok:</span> <span class="string">https://www.moralok.com</span></span><br><span class="line">  <span class="attr">Google:</span> <span class="string">https://google.com</span></span><br></pre></td></tr></table></figure></li>
+<li>在 <code>_config.next.yml</code> 文件中添加配置：</li>
 </ol>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">links:</span></span><br><span class="line">  <span class="attr">LINUX DO:</span> <span class="string">https://linux.do</span></span><br><span class="line">  <span class="attr">Moralok:</span> <span class="string">https://www.moralok.com</span></span><br><span class="line">  <span class="attr">Google:</span> <span class="string">https://google.com</span></span><br></pre></td></tr></table></figure>
+
 <p>通过以上两个简单的步骤，就实现了在首页的侧边栏中显示友链，具体效果如下：</p>
 <div style="width:20%;margin:auto"><img src="/2024/12/10/how-to-add-a-friends-links-page-non-invasively-when-using-Hexo-NexT-theme/Snipaste_2024-12-11_22-32-25.png" class="" title="NexT主题侧边栏显示友链"></div>
 
 <p>这种方式的优点是简单快捷；缺点是随着友链数量的增加，首页版面的美观度可能有所下降，同时有一点缺少可定制性。</p>
 <h3 id="添加单独的友链页面"><a href="#添加单独的友链页面" class="headerlink" title="添加单独的友链页面"></a>添加单独的友链页面</h3><h4 id="创建友链页面"><a href="#创建友链页面" class="headerlink" title="创建友链页面"></a>创建友链页面</h4><p>尽管第三方主题 <code>NexT</code> 并没有原生支持生成友链页面，就像生成归档页面和标签页面那样。但我们仍然可以通过自定义 <code>Hexo</code> 页面的方式添加并定制一个友链页面。</p>
 <ol>
-<li>在 <code>Hexo</code> 博客项目的<strong>根目录</strong>下运行以下命令，创建一个新的页面（假设命名为 <code>links</code>）：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo new page <span class="string">&quot;links&quot;</span></span><br></pre></td></tr></table></figure></li>
-<li>上述命令会在 <code>source</code> 目录下创建一个 <code>links</code> 文件夹，并在其中创建一个 <code>index.md</code> 文件。（在不同版本的 <code>Hexo</code> 中，文件路径有所不同）</li>
-<li>通过编辑这个 <code>index.md</code> 文件，就可以定制 <code>url</code> <code>/links</code> 对应的友链页面，比如以无序列表的方式展示友链：<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">-</span> [<span class="string">LINUX DO</span>](<span class="link">https://linux.do</span>)：新的理想型社区</span><br><span class="line"><span class="bullet">-</span> [<span class="string">Moralok</span>](<span class="link">https://www.moralok.com</span>)：Moralok 的个人博客</span><br><span class="line"><span class="bullet">-</span> [<span class="string">Google</span>](<span class="link">https://google.com</span>)：谷歌搜索</span><br></pre></td></tr></table></figure></li>
+<li>在 <code>Hexo</code> 博客项目的<strong>根目录</strong>下运行以下命令，创建一个新的页面（假设命名为 <code>links</code>）：</li>
 </ol>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hexo new page <span class="string">&quot;links&quot;</span></span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>上述命令会在 <code>source</code> 目录下创建一个 <code>links</code> 文件夹，并在其中创建一个 <code>index.md</code> 文件。（在不同版本的 <code>Hexo</code> 中，文件路径有所不同）</li>
+<li>通过编辑这个 <code>index.md</code> 文件，就可以定制 <code>url</code> <code>/links</code> 对应的友链页面，比如以无序列表的方式展示友链：</li>
+</ol>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="bullet">-</span> [<span class="string">LINUX DO</span>](<span class="link">https://linux.do</span>)：新的理想型社区</span><br><span class="line"><span class="bullet">-</span> [<span class="string">Moralok</span>](<span class="link">https://www.moralok.com</span>)：Moralok 的个人博客</span><br><span class="line"><span class="bullet">-</span> [<span class="string">Google</span>](<span class="link">https://google.com</span>)：谷歌搜索</span><br></pre></td></tr></table></figure>
+
 <p>相比于在首页添加友链，这种创建单独友链页面的方式，增加了可定制性，既可以展示更多的信息，也可以添加更多的样式。实际上，大多数使用这种方式的人或多或少都会进一步定制页面的样式，从而增加博客的美观程度。</p>
 <h4 id="定制友链页面"><a href="#定制友链页面" class="headerlink" title="定制友链页面"></a>定制友链页面</h4><p>因为 <code>Hexo</code> 面向的用户群体非常广大，且自身具备非常高的可定制性，各个领域的用户根据自身不同的认知可能采用不同的方式修改定制自己的博客，比如：</p>
 <ol>
@@ -329,8 +336,10 @@
 <p>网上大多数的教程都是建议直接修改该文件，但是和前面提到的页面定制相似，我们并不希望直接修改主题目录中的国际化配置文件。注意到同级目录中有一个 <code>theme/next/languages/README.md</code> 文件，里面提供了官方建议的无侵入式地覆盖默认翻译的方法：</p>
 <ol>
 <li>在 <code>Hexo</code> 博客项目的 <code>source/_data</code> 目录下创建一个 <code>languages.yml</code> 文件。</li>
-<li>添加如下配置覆盖默认翻译：<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># language</span></span><br><span class="line"><span class="attr">zh-CN:</span></span><br><span class="line">  <span class="comment"># items</span></span><br><span class="line">  <span class="attr">menu:</span></span><br><span class="line">    <span class="comment"># the translation you perfer</span></span><br><span class="line">    <span class="attr">links:</span> <span class="string">友链</span></span><br></pre></td></tr></table></figure></li>
+<li>添加如下配置覆盖默认翻译：</li>
 </ol>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># language</span></span><br><span class="line"><span class="attr">zh-CN:</span></span><br><span class="line">  <span class="comment"># items</span></span><br><span class="line">  <span class="attr">menu:</span></span><br><span class="line">    <span class="comment"># the translation you perfer</span></span><br><span class="line">    <span class="attr">links:</span> <span class="string">友链</span></span><br></pre></td></tr></table></figure>
+
 <blockquote>
 <p>事实上，如果不考虑国际化问题，直接在 <code>_config.next.yml</code> 文件中的 <code>menu</code> 节点下，用中文“友链”代替 links 也是可以的，但是正常情况下完全不建议这样子做。</p>
 </blockquote>
