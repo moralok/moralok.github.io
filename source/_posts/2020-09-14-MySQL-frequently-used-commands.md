@@ -96,7 +96,14 @@ tags: [mysql]
 |命令|描述|
 |--|--|
 |` SHOW [GLOBAL\|SESSION] VARIABLES; `|查看全部变量|
-|` SHOW [GLOBAL\|SESSION] VARIABLES [LIKE 匹配的模式]; ` </br> ` SELECT @@[GLOBAL\|SESSION].variable_name `|查看单个变量|
-|` SET [GLOBAL\|SESSION] variable_name = value; ` </br> ` SET @@[GLOBAL\|SESSION].variable_name = value `|设置单个变量|
+|` SHOW [GLOBAL\|SESSION] VARIABLES [LIKE 匹配的模式]; ` </br> ` SELECT @@[GLOBAL\|SESSION].variable_name; `|查看单个变量|
+|` SET [GLOBAL\|SESSION] variable_name = value; ` </br> ` SET @@[GLOBAL\|SESSION].variable_name = value; `|设置单个变量|
 
 > `SESSION` 可以省略。
+
+## 排查问题
+
+|命令|描述|
+|--|--|
+|`` SHOW PROCESSLIST; ``|查看当前数据库连接和线程状态|
+|`` KILL ID; ``|终止指定连接|
