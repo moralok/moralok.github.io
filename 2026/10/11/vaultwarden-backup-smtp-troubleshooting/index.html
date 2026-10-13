@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 7.3.0">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha256-yIDrPSXHZdOZhAqiBP7CKzIwMQmRCJ8UeB8Jo17YC4o=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.moralok.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.19.1","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="本文记录一次 Vaultwarden Backup 邮件通知失败的排查过程。最初日志显示 Unexpected EOF on SMTP connection，测试发现 SMTP 流量经过代理时无法收到服务器问候，改为直连后连接恢复；随后又遇到 535 5.7.3 Authentication unsuccessful，进一步确认当前 Outlook 账号不再接受这套基本认证配置。最终，更换为 Se">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Vaultwarden Backup 邮件通知排障：代理、认证与容器测试">
+<meta property="og:url" content="https://www.moralok.com/2026/10/11/vaultwarden-backup-smtp-troubleshooting/index.html">
+<meta property="og:site_name" content="Moralok&#39;s Blog">
+<meta property="og:description" content="本文记录一次 Vaultwarden Backup 邮件通知失败的排查过程。最初日志显示 Unexpected EOF on SMTP connection，测试发现 SMTP 流量经过代理时无法收到服务器问候，改为直连后连接恢复；随后又遇到 535 5.7.3 Authentication unsuccessful，进一步确认当前 Outlook 账号不再接受这套基本认证配置。最终，更换为 Se">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.moralok.com/2026/10/11/vaultwarden-backup-smtp-troubleshooting/docker%20stats%20of%20vaultwarden.png">
+<meta property="og:image" content="https://www.moralok.com/2026/10/11/vaultwarden-backup-smtp-troubleshooting/outlook%20forwarding%20and%20imap%20setting.png">
+<meta property="article:published_time" content="2026-10-11T21:29:26.000Z">
+<meta property="article:modified_time" content="2026-10-13T17:34:18.087Z">
+<meta property="article:author" content="Moralok">
+<meta property="article:tag" content="vaultwarden">
+<meta property="article:tag" content="smtp">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.moralok.com/2026/10/11/vaultwarden-backup-smtp-troubleshooting/docker%20stats%20of%20vaultwarden.png">
+
+
+<link rel="canonical" href="https://www.moralok.com/2026/10/11/vaultwarden-backup-smtp-troubleshooting/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.moralok.com/2026/10/11/vaultwarden-backup-smtp-troubleshooting/","path":"2026/10/11/vaultwarden-backup-smtp-troubleshooting/","title":"Vaultwarden Backup 邮件通知排障：代理、认证与容器测试"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Vaultwarden Backup 邮件通知排障：代理、认证与容器测试 | Moralok's Blog</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2MBCXKHJL0"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-2MBCXKHJL0","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Moralok's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">你在幼年时当快乐</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-links"><a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>友链</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A1%B9%E7%9B%AE%E8%83%8C%E6%99%AF"><span class="nav-number">1.</span> <span class="nav-text">项目背景</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Vaultwarden-%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.1.</span> <span class="nav-text">Vaultwarden 介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#vaultwarden-backup-%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.2.</span> <span class="nav-text">vaultwarden-backup 介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SMTP-%E9%82%AE%E4%BB%B6%E5%8F%91%E9%80%81%E5%A4%B1%E8%B4%A5%E6%97%A5%E5%BF%97"><span class="nav-number">1.3.</span> <span class="nav-text">SMTP 邮件发送失败日志</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%92%E6%9F%A5%E8%BF%87%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">排查过程</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E7%BD%AE-app-password"><span class="nav-number">2.1.</span> <span class="nav-text">重置 app password</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%82%AE%E4%BB%B6%E5%8F%91%E9%80%81%E6%B5%8B%E8%AF%95"><span class="nav-number">2.2.</span> <span class="nav-text">邮件发送测试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SMTP-%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%8F%AF%E8%BE%BE%E6%80%A7%E6%B5%8B%E8%AF%95"><span class="nav-number">2.3.</span> <span class="nav-text">SMTP 服务器可达性测试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SMTP-%E5%8F%AF%E7%94%A8%E6%80%A7%E6%B5%8B%E8%AF%95"><span class="nav-number">2.4.</span> <span class="nav-text">SMTP 可用性测试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9B%B4%E6%8D%A2%E5%8F%91%E4%BF%A1%E6%9C%8D%E5%8A%A1%E5%95%86"><span class="nav-number">2.5.</span> <span class="nav-text">更换发信服务商</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#mail-%E4%B8%8D%E6%98%AF-mail"><span class="nav-number">3.</span> <span class="nav-text">mail 不是 mail</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%83%AF%E6%80%A7%E6%80%9D%E7%BB%B4"><span class="nav-number">3.1.</span> <span class="nav-text">惯性思维</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E6%95%B0-vs-%E5%91%BD%E4%BB%A4"><span class="nav-number">3.2.</span> <span class="nav-text">参数 vs 命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#env-%E5%92%8C%E5%AE%B9%E5%99%A8%E5%86%85%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F"><span class="nav-number">3.3.</span> <span class="nav-text">.env 和容器内环境变量</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93%E5%92%8C%E5%8F%8D%E6%80%9D"><span class="nav-number">4.</span> <span class="nav-text">总结和反思</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.1.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%8D%E6%80%9D"><span class="nav-number">4.2.</span> <span class="nav-text">反思</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Moralok</p>
+  <div class="site-description" itemprop="description">却要知道，为这一切的事……</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">59</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">50</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/moralok" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;moralok" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.moralok.com/2026/10/11/vaultwarden-backup-smtp-troubleshooting/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Moralok">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Moralok's Blog">
+      <meta itemprop="description" content="却要知道，为这一切的事……">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Vaultwarden Backup 邮件通知排障：代理、认证与容器测试 | Moralok's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Vaultwarden Backup 邮件通知排障：代理、认证与容器测试
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-10-12 05:29:26" itemprop="dateCreated datePublished" datetime="2026-10-12T05:29:26+08:00">2026-10-12</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-10-14 01:34:18" itemprop="dateModified" datetime="2026-10-14T01:34:18+08:00">2026-10-14</time>
+    </span>
+
+  
+    <span id="/2026/10/11/vaultwarden-backup-smtp-troubleshooting/" class="post-meta-item leancloud_visitors" data-flag-title="Vaultwarden Backup 邮件通知排障：代理、认证与容器测试" title="阅读次数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span class="leancloud-visitors-count"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>4.1k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>14 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>本文记录一次 <code>Vaultwarden Backup</code> 邮件通知失败的排查过程。最初日志显示 <code>Unexpected EOF on SMTP connection</code>，测试发现 <code>SMTP</code> 流量经过代理时无法收到服务器问候，改为直连后连接恢复；随后又遇到 <code>535 5.7.3 Authentication unsuccessful</code>，进一步确认当前 Outlook 账号不再接受这套基本认证配置。最终，更换为 Serv00 提供 <code>SMTP</code> 服务，并成功收到备份邮件通知。排查中还发现，直接进入容器运行 <code>mail</code>，与通过镜像入口执行邮件测试并不等价。本文分别说明这些问题的现象、验证过程和处理结果。</p>
+<span id="more"></span>
+
+<h2 id="项目背景"><a href="#项目背景" class="headerlink" title="项目背景"></a>项目背景</h2><h3 id="Vaultwarden-介绍"><a href="#Vaultwarden-介绍" class="headerlink" title="Vaultwarden 介绍"></a>Vaultwarden 介绍</h3><p><code>Vaultwarden</code> 是一个用 <code>Rust</code> 语言编写的轻量级、开源的第三方 <code>Bitwarden</code> 服务端实现。</p>
+<p><strong>核心特点</strong></p>
+<p>• 高度兼容：完全兼容 <code>Bitwarden</code> 的官方客户端（包括浏览器扩展、桌面端、<code>iOS</code> 和 <code>Android</code> 移动端）。<br>• 极其轻量：资源占用极低（通常只需几十兆内存），一台配置很小的主机或 <code>NAS</code> 就能流畅运行。<br>• 端到端加密：数据在本地设备加密后才会上传，服务端只存密文，保护隐私安全。<br>• 免费且功能丰富：支持组织密码共享、两步验证等官方需要付费的部分高级功能。</p>
+<div style="width:90%;margin:auto"><img src="/2026/10/11/vaultwarden-backup-smtp-troubleshooting/docker%20stats%20of%20vaultwarden.png" class="" title="Vaultwarden 资源占用"></div>
+
+<h3 id="vaultwarden-backup-介绍"><a href="#vaultwarden-backup-介绍" class="headerlink" title="vaultwarden-backup 介绍"></a>vaultwarden-backup 介绍</h3><p><a target="_blank" rel="noopener" href="https://github.com/ttionya/vaultwarden-backup">ttionya&#x2F;vaultwarden-backup</a> 是一个专为 <code>Vaultwarden</code> 量身定制的开源自动备份工具。它基于 <code>Docker</code> 容器化部署，利用强大的底层传输工具 <code>Rclone</code>，能够安全、高效、自动化地将自建密码库的数据备份并同步到几乎所有主流的云存储或远程系统中。</p>
+<h3 id="SMTP-邮件发送失败日志"><a href="#SMTP-邮件发送失败日志" class="headerlink" title="SMTP 邮件发送失败日志"></a>SMTP 邮件发送失败日志</h3><p><code>vaultwarden-backup</code> 可以设置在备份成功或失败时通过 <code>SMTP</code> 发送邮件通知。最开始注意到邮件发送失败时，我并没有马上处理，一方面是因为服务已经稳定运行多年，数据备份正常；另一方面是因为当初启用 Outlook 邮箱 <code>SMTP</code> 的过程有点麻烦，非必要实在不想访问微软的网站。</p>
+<p>报错的日志如下：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">backup-1       | upload backup file to storage system [BitwardenBackup:/BitwardenBackup]</span><br><span class="line">backup-1       | mail: Warning: variable superseded or obsoleted: smtp</span><br><span class="line">backup-1       | mail: Warning: variable superseded or obsoleted: smtp-auth-user</span><br><span class="line">backup-1       | mail: Warning: variable superseded or obsoleted: smtp-auth-password</span><br><span class="line">backup-1       | mail: Obsoletion warning: please do not use *smtp*, instead assign a smtp:// URL to *mta*!</span><br><span class="line">backup-1       | mail: Obsoletion warning: Use of old-style credentials, which will vanish in v15!</span><br><span class="line">backup-1       | mail:   Please read the manual section &quot;On URL syntax and credential lookup&quot;</span><br><span class="line">backup-1       | mail: Unexpected EOF on SMTP connection</span><br><span class="line">backup-1       | /root/dead.letter 10/324</span><br><span class="line">backup-1       | mail: ... message not sent</span><br><span class="line">backup-1       | mail sending has failed</span><br><span class="line">backup-1       | completion ping has been sent successfully</span><br></pre></td></tr></table></figure>
+
+<p>当时心里推测的可能原因有两个：</p>
+<ol>
+<li>Outlook 邮箱的 <code>app password</code> 可能由于某种安全原因失效了</li>
+<li>网络流量经过 <code>mihomo</code> 代理分发导致了某种问题</li>
+</ol>
+<p>事实上，<strong>最终的排查结果是两方面的原因都有</strong>：</p>
+<ol>
+<li>Outlook 邮箱 <code>SMTP</code> 不再支持基本认证，要求使用 <code>OAuth2</code>（不排除不同类型，不同个体的 Outlook 账号仍支持基本认证的可能性）</li>
+<li>使用的代理服务器屏蔽 <code>25/465/587</code> 端口，防止垃圾邮件</li>
+</ol>
+<h2 id="排查过程"><a href="#排查过程" class="headerlink" title="排查过程"></a>排查过程</h2><blockquote>
+<p>最近 <code>Homelab</code> 更新告一段落，着手处理这个问题，没想到又是一个大坑，埋了我大半天。Orz……</p>
+</blockquote>
+<h3 id="重置-app-password"><a href="#重置-app-password" class="headerlink" title="重置 app password"></a>重置 app password</h3><p>第一步，重置 <code>app password</code>。</p>
+<p>Microsoft 账户 → 安全 → 管理登录方式：</p>
+<ol>
+<li>确认双重验证已开启（这是使用 <code>app password</code> 的前提条件）</li>
+<li>删除现有的 <code>app password</code>（应用密码） 并创建新的</li>
+</ol>
+<h3 id="邮件发送测试"><a href="#邮件发送测试" class="headerlink" title="邮件发送测试"></a>邮件发送测试</h3><p>第二步，使用新的 <code>app password</code> 测试是否可以发送邮件。</p>
+<p>在 <code>vaultwarden-backup</code> 项目的 <a target="_blank" rel="noopener" href="https://github.com/ttionya/vaultwarden-backup/blob/master/README_zh.md">README_zh.md</a> 中，有一段关于邮件发送测试的说明。</p>
+<blockquote>
+<p>你可以使用下面的命令测试邮件发送功能。我们会增加 <code>-v</code> 标志以显示详细信息，你无需在 <code>MAIL_SMTP_VARIABLES</code> 中重复设置。</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker run --<span class="built_in">rm</span> -it -e MAIL_SMTP_VARIABLES=<span class="string">&#x27;&lt;your smtp variables&gt;&#x27;</span> ttionya/vaultwarden-backup:latest mail &lt;mail send to&gt;</span><br><span class="line"></span><br><span class="line"><span class="comment"># Or</span></span><br><span class="line"></span><br><span class="line">docker run --<span class="built_in">rm</span> -it -e MAIL_SMTP_VARIABLES=<span class="string">&#x27;&lt;your smtp variables&gt;&#x27;</span> -e MAIL_TO=<span class="string">&#x27;&lt;mail send to&gt;&#x27;</span> ttionya/vaultwarden-backup:latest mail</span><br></pre></td></tr></table></figure>
+
+<p>因为我的 <code>Vaultwarden</code> 服务正在正常运行，所以我按个人习惯进入 <code>backup</code> 容器进行测试。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -it vaultwarden-backup-1 bash</span><br><span class="line">mail another-example.outlook.com</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>这里我其实踩到了一个深坑，只是无意中 AI 带着我飞过去了。提前剧透，作者的测试命令中的 <code>mail</code> 和我使用的命令中的 <code>mail</code> 指向的一个东西。</strong></p>
+</blockquote>
+<p>刚开始我以为容器会根据配置设置好环境变量，但是测试报错，报错的核心信息 <code>sendmail: can&#39;t connect to remote host (127.0.0.1): Connection refused</code> 和 20240518 open 至今的 <a target="_blank" rel="noopener" href="https://github.com/ttionya/vaultwarden-backup/issues/153">issue #153</a> 提到的报错信息相似。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">1e4cb0d00964:/data# mail another-example.outlook.com</span><br><span class="line">Subject: Test inside container</span><br><span class="line">To: another-example.outlook.com</span><br><span class="line">This is a test message from container.</span><br><span class="line">^D</span><br><span class="line">-------</span><br><span class="line">(Preliminary) Envelope contains:</span><br><span class="line">To: another-example.outlook.com</span><br><span class="line">Subject: Test inside container</span><br><span class="line">Send this message [yes/no, empty: recompose]? yes</span><br><span class="line">sendmail: can&#x27;t connect to remote host (127.0.0.1): Connection refused</span><br><span class="line">/root/dead.letter 8/195</span><br><span class="line">mail: ... message not sent</span><br></pre></td></tr></table></figure>
+
+<p>我的第一反应是怀疑 <code>SMTP</code> 相关设置没有被正确传递。<a target="_blank" rel="noopener" href="https://github.com/ttionya/vaultwarden-backup/issues/153">issue #153</a> 的评论区有人有类似的想法：</p>
+<blockquote>
+<p>EDIT: Also want to add this. I think connection refused with 127.0.0.1 means that smtp or mta was not set correctly and is trying to connect to default smtp which is localhost.</p>
+</blockquote>
+<p>测试发现环境变量 <code>MAIL_SMTP_VARIABLES</code> 确实为空，我只当是因为自己使用 <code>.env</code> 导致。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">export MAIL_SMTP_VARIABLES=&quot; \</span><br><span class="line">-S smtp-use-starttls \</span><br><span class="line">-S smtp=smtp://smtp.office365.com:587 \</span><br><span class="line">-S smtp-auth=login \</span><br><span class="line">-S smtp-auth-user=example@outlook.com \</span><br><span class="line">-S smtp-auth-password=example-password \</span><br><span class="line">-S from=example@outlook.com another-example@outlook.com&quot;</span><br></pre></td></tr></table></figure>
+
+<p>但是在手动 <code>export</code> 后重新测试发现仍然报错。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sendmail: can&#x27;t connect to remote host (127.0.0.1): Connection refused</span><br></pre></td></tr></table></figure>
+
+<h3 id="SMTP-服务器可达性测试"><a href="#SMTP-服务器可达性测试" class="headerlink" title="SMTP 服务器可达性测试"></a>SMTP 服务器可达性测试</h3><p>其实到这里时我有过一瞬间的担心，先想起前段时间更新 <code>Homelab</code> 时卡壳多天的网络问题，不过又想起放下精神洁癖后让 AI 自己突突了 2 小时就解决了。于是我果断让 AI 进行第三步，测试容器和 <code>SMTP</code> 服务器是否可以连接。<strong>果不其然，可恶，又有网络问题</strong>。AI 排查过程简单处理后如下：</p>
+<ol>
+<li>确认可以网络可达，建立过连接</li>
+</ol>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Unexpected EOF 说明连接建立过，但 SMTP 对话中途断了。先看容器里的实际情况：</span><br><span class="line"></span><br><span class="line">容器 nc 测试:   smtp.office365.com (198.18.2.112:587) open     ← TCP 握手成功</span><br><span class="line">mihomo 日志:    [TCP] --&gt; smtp.office365.com:587 using JMS[...]  ← 有日志！走了代理</span><br><span class="line"></span><br><span class="line">宿主机 python:  :587  连接成功 8.01s  banner=&lt;no banner: TimeoutError&gt;</span><br><span class="line">                :25   连接成功 8.01s  banner=&lt;no banner: TimeoutError&gt;</span><br><span class="line">                ↑ TCP 连上了，但【SMTP 服务器一句问候都不回】</span><br></pre></td></tr></table></figure>
+
+<ol start="2">
+<li>确认是代理节点封了 <code>SMTP</code> 端口，还是 Office365 封了代理节点的出口 <code>IP</code>。</li>
+</ol>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">Office365 :587   8秒无数据 ✗</span><br><span class="line">Gmail     :587   8秒无数据 ✗</span><br><span class="line">163       :587   8秒无数据 ✗</span><br><span class="line">Gmail     :465   8秒无数据 ✗</span><br><span class="line">Office365 :443   8秒无数据 ✗</span><br><span class="line">QQ邮箱    :587   0.20s  220 newxmesmtplogicsvrsza73-0.qq.com XMail Esmtp  ✓</span><br><span class="line"></span><br><span class="line">只有国内的 QQ 秒回——因为它走 DIRECT 不走代理。所有走代理的国外 SMTP 全部卡死。</span><br><span class="line"></span><br><span class="line">同一个 IP、同一个端口，直连通、走代理死</span><br><span class="line"></span><br><span class="line">smtp.office365.com  (真实 IP ******)</span><br><span class="line">  绕过代理直连   0.24s  220 TP0P295CA0031.outlook.office365.com Microsoft ESMTP MAIL  ✓</span><br><span class="line">  经 tun/代理    9.01s  &lt;无任何数据&gt;                                                     ✗</span><br><span class="line"></span><br><span class="line">smtp.gmail.com      (真实 IP ******)</span><br><span class="line">  绕过代理直连   0.63s  220 smtp.gmail.com ESMTP ...                                   ✓</span><br><span class="line">  经 tun/代理    9.01s  &lt;无任何数据&gt;                                                     ✗</span><br></pre></td></tr></table></figure>
+
+<p>结论是<strong>使用的代理服务器屏蔽了 <code>25/465/587</code> 端口</strong>，修改 <code>mihomo</code> 规则走 Direct：</p>
+<ul>
+<li>可以按端口</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">- DST-PORT,587,DIRECT</span><br><span class="line">- DST-PORT,465,DIRECT</span><br><span class="line">- DST-PORT,25,DIRECT</span><br></pre></td></tr></table></figure>
+<ul>
+<li>也可以按域名</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">- DOMAIN,smtp.office365.com,DIRECT</span><br></pre></td></tr></table></figure>
+
+<p>在修复网络问题后，AI 立刻发现了新的报错 <code>535 5.7.3 Authentication unsuccessful</code>。</p>
+<h3 id="SMTP-可用性测试"><a href="#SMTP-可用性测试" class="headerlink" title="SMTP 可用性测试"></a>SMTP 可用性测试</h3><p>显然，这是微软的响应。第四步，测试 Outlook 邮箱的 <code>SMTP</code> 功能是否可用。<strong>在某种程度上这部分是最折磨的，因为 AI 工具介入不便，又因为微软的网站巨卡，还因为敏感操作要反复进行身份验证</strong>。</p>
+<p>确认并测试：</p>
+<ol>
+<li>邮箱是否正确</li>
+<li><code>app password</code> 是否从正确的账号上生成、复制并被正确粘贴</li>
+<li><code>SMTP</code> 服务器域名是否从 <code>smtp.office365.com</code> 变更为 <code>smtp-mail.outlook.com</code></li>
+<li>双重验证是否开启</li>
+</ol>
+<p>但报错信息始终不变，而且有点坑的是 <code>535 5.7.3 Authentication unsuccessful</code> 这种模糊的报错信息虽然阻止了攻击者依靠错误信息探测某个账号是否存在、是否启用了什么策略，但是也将账号所有者挡在信息之外。</p>
+<blockquote>
+<p>测试过程中，注意到进入容器内的测试报错始终是 <code>sendmail: can&#39;t connect to remote host (127.0.0.1): Connection refused</code>，怀疑两条命令中的 <code>mail</code> 指向不同，先改用文档提供的测试方法，原因之后分析。</p>
+</blockquote>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">mail: Resolving host smtp.office365.com:587 ... done</span><br><span class="line">mail: Connecting to 40.99.10.114:587 ... connected.</span><br><span class="line">mail:  Certificate depth 2</span><br><span class="line">mail:   subject = /C=US/O=DigiCert Inc/OU=www.digicert.com/CN=DigiCert Global Root G2</span><br><span class="line">mail:   notBefore = Aug  1 12:00:00 2013 GMT</span><br><span class="line">mail:   notAfter = Jan 15 12:00:00 2038 GMT</span><br><span class="line">mail:   issuer = /C=US/O=DigiCert Inc/OU=www.digicert.com/CN=DigiCert Global Root G2</span><br><span class="line">mail:  Certificate depth 1</span><br><span class="line">mail:   subject = /C=US/O=DigiCert Inc/CN=DigiCert Global G2 TLS RSA SHA256 2020 CA1</span><br><span class="line">mail:   notBefore = Mar 30 00:00:00 2021 GMT</span><br><span class="line">mail:   notAfter = Mar 29 23:59:59 2031 GMT</span><br><span class="line">mail:   issuer = /C=US/O=DigiCert Inc/OU=www.digicert.com/CN=DigiCert Global Root G2</span><br><span class="line">mail:  Certificate depth 0</span><br><span class="line">mail:   subject = /C=US/ST=Washington/L=Redmond/O=Microsoft Corporation/CN=outlook.com</span><br><span class="line">mail:   notBefore = Jun 26 00:00:00 2026 GMT</span><br><span class="line">mail:   notAfter = Jan 10 23:59:59 2027 GMT</span><br><span class="line">mail:   issuer = /C=US/O=DigiCert Inc/CN=DigiCert Global G2 TLS RSA SHA256 2020 CA1</span><br><span class="line">mail: Comparing subject_alt_name: need&lt;smtp.office365.com&gt; is&lt;outlook.com&gt;</span><br><span class="line">mail: Comparing subject_alt_name: need&lt;smtp.office365.com&gt; is&lt;*.hotmail.com&gt;</span><br><span class="line">mail: Comparing subject_alt_name: need&lt;smtp.office365.com&gt; is&lt;*.internal.outlook.com&gt;</span><br><span class="line">mail: Comparing subject_alt_name: need&lt;smtp.office365.com&gt; is&lt;*.live.com&gt;</span><br><span class="line">mail: Comparing subject_alt_name: need&lt;smtp.office365.com&gt; is&lt;*.office.com&gt;</span><br><span class="line">mail: Comparing subject_alt_name: need&lt;smtp.office365.com&gt; is&lt;*.office365.com&gt;</span><br><span class="line">mail: TLS certificate ok</span><br><span class="line">mail: TLS BLAKE2s256 fingerprint: 57:13:29:BD:2E:18:88:2C:9F:34:2B:03:6D:C4:E7:C4:1D:A3:4A:55:7E:46:7A:7A:8A:D0:74:8C:8B:1D:E6:C4</span><br><span class="line">mail: TLS connection using TLSv1.3 / TLS_AES_256_GCM_SHA384</span><br><span class="line">mail: SMTP server: 535 5.7.3 Authentication unsuccessful [SI2PR04CA0013.apcprd04.prod.outlook.com 2026-10-12T12:54:49.248Z 08DF283A92EB71C0]</span><br><span class="line">/root/dead.letter 10/297</span><br><span class="line">mail: ... message not sent</span><br><span class="line">mail sending has failed</span><br></pre></td></tr></table></figure>
+
+<p>期间，AI 多次建议在 Thunderbird 客户端配一次 <code>SMTP</code> 验证是 <code>s-nail</code> 兼容性问题，密码问题，还是账号基本认证被禁用问题，或者直接更换国内发信服务商，但我还是想挣扎一下。<br>直到 AI 通过 <code>IMAP</code> 服务器拿到了更具体的响应 <code>Basic authentication is disabled</code>，判断微软确实已经禁用这个账号的基本认证，要求使用 <code>OAuth2</code>；进一步搜索到 <a target="_blank" rel="noopener" href="https://docs.n8n.io/integrations/builtin/credentials/send-email/outlook">n8n Docs</a>声称“微软已移除 Outlook <code>SMTP</code> 的基本认证和 <code>app passwords</code>”；最后根据【转发和 IMAP 页面】没有 SMTP 相关设置判断此路注定不通，我才终于死心，放弃使用 Outlook 作为发信服务商。</p>
+<div style="width:70%;margin:auto"><img src="/2026/10/11/vaultwarden-backup-smtp-troubleshooting/outlook%20forwarding%20and%20imap%20setting.png" class="" title="Outlook 转发和 IMAP 设置"></div>
+
+<h3 id="更换发信服务商"><a href="#更换发信服务商" class="headerlink" title="更换发信服务商"></a>更换发信服务商</h3><p>最终，我参考<a target="_blank" rel="noopener" href="https://linux.do/t/topic/97186">SMTP on Serv00（仅需域名使用基于serv00的SMTP服务）</a>选择使用 Serv00 作为发信服务商，测试成功发送邮件通知。 相信选择 QQ 或者 163 邮箱也同样可以。</p>
+<h2 id="mail-不是-mail"><a href="#mail-不是-mail" class="headerlink" title="mail 不是 mail"></a>mail 不是 mail</h2><p>命令 <code>docker run …… mail ……</code> 中的 <code>mail</code> 和进入容器后运行的 <code>mail</code> 不是一个东西，如果没有注意，后者的测试结果将会一直是 <code>sendmail: can&#39;t connect to remote host (127.0.0.1): Connection refused</code>。</p>
+<h3 id="惯性思维"><a href="#惯性思维" class="headerlink" title="惯性思维"></a>惯性思维</h3><p>如果你要连接容器中的 <code>Redis</code> 服务，你可能会使用一个用完就删的临时容器：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -it --rm redis redis-cli -h &lt;你的Redis服务IP或主机名&gt; -p 6379</span><br></pre></td></tr></table></figure>
+
+<p>你还可能会想直接进入已经存在的 <code>Redis</code> 容器内部使用自带的 <code>redis-cli</code>：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -it &lt;你的Redis容器名或ID&gt; redis-cli</span><br><span class="line"></span><br><span class="line"><span class="comment"># 或者</span></span><br><span class="line">docker <span class="built_in">exec</span> -it &lt;你的Redis容器名或ID&gt; sh</span><br><span class="line"><span class="comment"># 进入后在容器内输入：redis-cli</span></span><br></pre></td></tr></table></figure>
+
+<p>所以，当我看到文档中提供的邮件发送测试方法：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run --<span class="built_in">rm</span> -it -e MAIL_SMTP_VARIABLES=<span class="string">&#x27;&lt;your smtp variables&gt;&#x27;</span> ttionya/vaultwarden-backup:latest mail &lt;mail send to&gt;</span><br></pre></td></tr></table></figure>
+
+<p>我以为效果等同于：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> -it vaultwarden-backup sh</span><br><span class="line">mail &lt;mail send to&gt;</span><br></pre></td></tr></table></figure>
+
+<h3 id="参数-vs-命令"><a href="#参数-vs-命令" class="headerlink" title="参数 vs 命令"></a>参数 vs 命令</h3><p>在执行 <code>docker run</code> 时，<code>Dockerfile</code> 中配置的 <code>ENTRYPOINT</code> 脚本会作为容器启动时的第一个主进程（<code>PID 1</code>）优先运行。</p>
+<ul>
+<li>如果 <code>Dockerfile</code> 中同时有 <code>ENTRYPOINT</code> 和 <code>CMD</code>，<code>CMD</code> 的内容会被当作参数传递给 <code>ENTRYPOINT</code> 脚本。</li>
+<li>如果在 <code>docker run</code> 后面追加了命令参数（例如 <code>docker run &lt;image&gt; echo hello</code>），这些参数会追加到 <code>ENTRYPOINT</code> 后面，并覆盖掉 <code>Dockerfile</code> 中的 <code>CMD</code>。</li>
+</ul>
+<p>查看项目源码，<code>scripts/entrypoint.sh</code> 中有以下一段代码：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">. /app/includes.sh</span><br><span class="line"><span class="meta prompt_"></span></span><br><span class="line"><span class="meta prompt_"># </span><span class="language-bash">mail <span class="built_in">test</span></span></span><br><span class="line">if [[ &quot;$1&quot; == &quot;mail&quot; ]]; then</span><br><span class="line">    export_env_file</span><br><span class="line">    init_env_display</span><br><span class="line">    init_env_mail</span><br><span class="line"></span><br><span class="line">    MAIL_SMTP_ENABLE=&quot;TRUE&quot;</span><br><span class="line">    MAIL_DEBUG=&quot;TRUE&quot;</span><br><span class="line"></span><br><span class="line">    if [[ -n &quot;$2&quot; ]]; then</span><br><span class="line">        MAIL_TO=&quot;$2&quot;</span><br><span class="line">    fi</span><br><span class="line"></span><br><span class="line">    send_mail &quot;$&#123;DISPLAY_NAME&#125; Backup Test&quot; &quot;Your SMTP configuration looks correct.&quot;</span><br><span class="line"></span><br><span class="line">    exit 0</span><br><span class="line">fi</span><br></pre></td></tr></table></figure>
+
+<p>而 <code>send_mail</code> 方法定义在 <code>scripts/includes.sh</code> 中：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">function send_mail() &#123;</span><br><span class="line">    local MAIL_VERBOSE_FLAG=&quot;&quot;</span><br><span class="line">    local MAIL_TEMPLATE_FLAG=&quot;&quot;</span><br><span class="line">    local MAIL_TEMPLATE=&quot;&quot;</span><br><span class="line">    local MAIL_USED_MESSAGE_ID=&quot;&quot;</span><br><span class="line"></span><br><span class="line">    # verbose</span><br><span class="line">    if [[ &quot;$&#123;MAIL_DEBUG&#125;&quot; == &quot;TRUE&quot; ]]; then</span><br><span class="line">        MAIL_VERBOSE_FLAG=&quot;-v&quot;</span><br><span class="line">    fi</span><br><span class="line"></span><br><span class="line">    # template</span><br><span class="line">    if [[ &quot;$&#123;MAIL_USE_THREAD&#125;&quot; == &quot;TRUE&quot; ]]; then</span><br><span class="line">        if [[ -n &quot;$&#123;MAIL_PARENT_MESSAGE_ID&#125;&quot; ]]; then</span><br><span class="line">            MAIL_USED_MESSAGE_ID=&quot;$&#123;MAIL_PARENT_MESSAGE_ID&#125;&quot;</span><br><span class="line">            MAIL_TEMPLATE=&quot;References: $&#123;MAIL_USED_MESSAGE_ID&#125;\nIn-Reply-To: $&#123;MAIL_USED_MESSAGE_ID&#125;\n\n&quot;</span><br><span class="line">        else</span><br><span class="line">            MAIL_USED_MESSAGE_ID=&quot;&lt;$(date +%s%N).$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 16).$(hostname)@vaultwarden.backup&gt;&quot;</span><br><span class="line">            MAIL_TEMPLATE=&quot;Message-ID: $&#123;MAIL_USED_MESSAGE_ID&#125;\n\n&quot;</span><br><span class="line">        fi</span><br><span class="line">    fi</span><br><span class="line">    if [[ -n &quot;$&#123;MAIL_TEMPLATE&#125;&quot; ]]; then</span><br><span class="line">        MAIL_TEMPLATE_FLAG=&quot;-t&quot;</span><br><span class="line">    fi</span><br><span class="line"></span><br><span class="line">    echo -e &quot;$&#123;MAIL_TEMPLATE&#125;$2&quot; | eval &quot;mail $&#123;MAIL_VERBOSE_FLAG&#125; $&#123;MAIL_TEMPLATE_FLAG&#125; -s \&quot;$1\&quot; $&#123;MAIL_SMTP_VARIABLES&#125; \&quot;$&#123;MAIL_TO&#125;\&quot;&quot;</span><br><span class="line">    if [[ $? != 0 ]]; then</span><br><span class="line">        color red &quot;mail sending has failed&quot;</span><br><span class="line">    else</span><br><span class="line">        color blue &quot;mail has been sent successfully&quot;</span><br><span class="line"></span><br><span class="line">        if [[ &quot;$&#123;MAIL_USE_THREAD&#125;&quot; == &quot;TRUE&quot; &amp;&amp; -z &quot;$&#123;MAIL_PARENT_MESSAGE_ID&#125;&quot; ]]; then</span><br><span class="line">            mkdir -p &quot;$(dirname &quot;$&#123;MAIL_PARENT_MESSAGE_ID_FILE&#125;&quot;)&quot;</span><br><span class="line">            echo -n &quot;$&#123;MAIL_USED_MESSAGE_ID&#125;&quot; &gt; &quot;$&#123;MAIL_PARENT_MESSAGE_ID_FILE&#125;&quot;</span><br><span class="line">        fi</span><br><span class="line">    fi</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>因此，如果想要进入容器直接进行测试，必须正确使用 <code>mail</code> 命令。比如：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mail -S smtp-use-starttls \</span><br><span class="line">-S smtp=smtp://smtp.office365.com:587 \</span><br><span class="line">-S smtp-auth=login \</span><br><span class="line">-S smtp-auth-user=example@outlook.com \</span><br><span class="line">-S smtp-auth-password=example-password \</span><br><span class="line">-S from=example@outlook.com another-example@outlook.com</span><br></pre></td></tr></table></figure>
+
+<h3 id="env-和容器内环境变量"><a href="#env-和容器内环境变量" class="headerlink" title=".env 和容器内环境变量"></a><code>.env</code> 和容器内环境变量</h3><p>另外，之所以刚开始测试时容器内环境变量 <code>MAIL_SMTP_VARIABLES</code> 为空，是因为在 <code>Docker Compose</code> 中，项目目录下的 <code>.env</code> 文件和容器内的环境变量是两个不同的概念，它们之间不会自动划等号。<code>.env</code> 不会自动注入容器，必须通过以下两种方式“桥接”到容器内：</p>
+<p><strong>通过 environment 显式引用</strong></p>
+<p>在 <code>docker-compose.yml</code> 中使用 <code>$&#123;VAR_NAME&#125;</code> 语法，把 <code>.env</code> 里的值显式传给容器的 <code>environment</code> 节点：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">web:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">DATABASE_HOST=$&#123;DATABASE_HOST&#125;</span> <span class="comment"># 从 .env 插值并传入容器</span></span><br></pre></td></tr></table></figure>
+
+<p>转换链路：<code>.env</code> 文件 ➔ <code>Compose</code> 解析并替换 <code>docker-compose.yml</code> 中的 <code>$&#123;DATABASE_HOST&#125;</code> ➔ 启动容器时通过 <code>-e</code> 注入到容器运行时环境。</p>
+<p><strong>通过 env_file 整体加载</strong></p>
+<p>如果某个服务需要加载整个文件，可以在 <code>docker-compose.yml</code> 中通过 <code>env_file</code> 指定：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">web:</span></span><br><span class="line">    <span class="attr">image:</span> <span class="string">nginx</span></span><br><span class="line">    <span class="attr">env_file:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">.env</span> <span class="comment"># 明确告诉 Compose 把这个文件注入到该容器</span></span><br></pre></td></tr></table></figure>
+
+<p>转换链路：<code>Compose</code> 读取指定的 <code>.env</code> 文件，在创建容器时将其中的 <code>KEY=VALUE</code> 批量注入容器环境。</p>
+<h2 id="总结和反思"><a href="#总结和反思" class="headerlink" title="总结和反思"></a>总结和反思</h2><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p><strong>最终排查出的问题有两方面</strong>：</p>
+<ol>
+<li>Outlook 邮箱 <code>SMTP</code> 不再支持基本认证，要求使用 <code>OAuth2</code>（不排除不同类型，不同个体的 Outlook 账号仍支持基本认证的可能性）。文档参见<a target="_blank" rel="noopener" href="https://support.microsoft.com/en-us/outlook/pop-imap-and-smtp-settings-for-outlook-com">POP, IMAP, and SMTP settings for Outlook.com</a>。</li>
+<li>使用的代理服务器屏蔽 <code>25/465/587</code> 端口。可见，透明代理也不是一劳永逸。</li>
+</ol>
+<p>排查有三个主要方向：</p>
+<ol>
+<li>确认发信服务商支持 <code>SMTP</code> 及其使用方式</li>
+<li>报错信息为 <code>sendmail: can&#39;t connect to remote host (127.0.0.1): Connection refused</code>，极有可能是 <code>SMTP</code> 相关设置没有正确传递给最终的二进制可执行程序 <code>mail</code>。</li>
+<li>报错信息为 <code>Unexpected EOF on SMTP connection</code>，检查网络是否走代理以及代理服务器是否屏蔽 <code>25/465/587</code> 端口。</li>
+</ol>
+<h3 id="反思"><a href="#反思" class="headerlink" title="反思"></a>反思</h3><ol>
+<li>为了网络畅通必须引入代理，但有时候会产生一些奇怪的问题，你往往很难定位到底是哪个环节出了问题。但在 AI 能够“触达和上手”之后，排查和测试变得容易非常多，它比半吊子的自己更知道如何从更底层获取信息并发现关键点。</li>
+<li>马后炮地说，如果直接换 QQ 或 163 邮箱，好像一切自然迎刃而解，但避开了坑 vs 趟过了坑，各有好处。</li>
+<li>善游者溺，自以为已经熟悉的地方也可能有自己不了解的坑。<ul>
+<li>几年前 Outlook 邮箱 <code>SMTP</code> 要求必须开启双重验证、使用 <code>app password</code> 而不能直接使用主密码。几年后 Outlook 禁用了基本认证，要求使用 OAuth2。年年坑不同。不过难道微软完全放弃那些不支持 <code>OAuth2</code> 的场景了？</li>
+<li><code>Docker</code> 常常用，但常用的知识其实很少，很多时间一长大部分就模糊了，而且有些关键点，如果不是踩过坑，可能根本留意不到。</li>
+</ul>
+</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/vaultwarden/" rel="tag"># vaultwarden</a>
+              <a href="/tags/smtp/" rel="tag"># smtp</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/01/20/using-gdb/" rel="prev" title="使用 GDB">
+                  <i class="fa fa-angle-left"></i> 使用 GDB
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Moralok</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">161k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">8:57</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.4.1/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+
+
+  
+
+
+  <script class="next-config" data-name="leancloud_visitors" type="application/json">{"enable":true,"app_id":"3EC6DlIt15eVYStwSVsDsQ2P-MdYXbMMI","app_key":"KKBQicvLunsmAfgH3DJJXvng","server_url":null,"security":false}</script>
+  <script src="/js/third-party/statistics/lean-analytics.js"></script>
+
+
+
+</body>
+</html>
