@@ -202,41 +202,6 @@ tmux list-commands
 
 > 个人没有修改默认前缀键 `Ctrl+b` 为可能更顺手的 `Ctrl+a` 或 `Ctrl+s`；没有在配置文件中加入 `setw -g mode-keys vi` 开启 `vi` 模式并绑定系统剪贴板，**现代终端通常支持选中即复制（Copy on select）**。
 
-以下配置文件仅供参考。
-
-```shell
-# 鼠标：切换窗格、调整大小、选择窗口
-set -g mouse on
-
-# 每个窗格保留更多历史输出
-set -g history-limit 50000
-
-# 窗口和窗格编号从 1 开始
-set -g base-index 1
-setw -g pane-base-index 1
-
-# 关闭窗口后自动整理编号
-set -g renumber-windows on
-
-# 缩短 Escape 等待时间，改善 Vim 等终端程序的响应
-set -sg escape-time 10
-
-# 使用现代终端描述；客户端终端需支持对应功能
-set -g default-terminal "tmux-256color"
-
-# 按 r 重新加载配置
-bind r source-file ~/.tmux.conf \; display-message "tmux config reloaded"
-
-# List of plugins
-set -g @plugin 'tmux-plugins/tpm'
-set -g @plugin 'tmux-plugins/tmux-sensible'
-set -g @plugin 'tmux-plugins/tmux-resurrect'
-set -g @plugin 'tmux-plugins/tmux-continuum'
-
-# Initialize TMUX plugin manager (keep this line at the very bottom of tmux.conf)
-run '~/.tmux/plugins/tpm/tpm'
-```
-
 ### 窗格与窗口操作
 
 1. 善用临时最大化：当某个窗格日志过多时，使用 `Ctrl+b z` 临时全屏放大当前窗格，再次按下即可还原。
@@ -251,6 +216,47 @@ run '~/.tmux/plugins/tpm/tpm'
     - 推荐安装 [tmux-sensible](https://github.com/tmux-plugins/tmux-sensible)，统一的基础开箱即用设置，修改不合理的默认配置
     - 推荐安装 [tmux-resurrect](https://github.com/tmux-plugins/tmux-resurrect)，手动保存与恢复会话，不惧重启和断电
     - 推荐安装 [tmux-continuum](https://github.com/tmux-plugins/tmux-continuum)，自动备份会话，配合 tmux-resurrect 每 15 分钟后台静默保存
+
+如果服务器发生重启，默认的 `tmux` 会话会全部丢失。
+
+在安装 `tmux-resurrect` 后：
+- 手动保存快照：在 `tmux` 会话中按下快捷键 `Ctrl+b`，然后按 `Ctrl+s`。
+- 手动恢复快照：在 `tmux` 会话中按下快捷键 `Ctrl+b`，然后按 `Ctrl+r`。
+
+如果还安装了 `tmux-continuum`，无需手动恢复。
+
+### 配置文件（仅供参考）。
+
+```shell
+# Mouse support
+set -g mouse on
+
+# Window and pane numbering
+set -g base-index 1
+setw -g pane-base-index 1
+set -g renumber-windows on
+
+# Terminal
+set -g default-terminal "tmux-256color"
+set -sg escape-time 10
+
+# Reload configuration
+bind R source-file ~/.tmux.conf \; display-message "tmux config reloaded"
+
+# Plugins
+set -g @plugin 'tmux-plugins/tpm'
+set -g @plugin 'tmux-plugins/tmux-sensible'
+set -g @plugin 'tmux-plugins/tmux-resurrect'
+set -g @plugin 'tmux-plugins/tmux-continuum'
+
+# Continuum: automatic save and restore
+set -g @continuum-save-interval '15'
+set -g @continuum-restore 'on'
+
+# Initialize TMUX plugin manager (keep this line at the very bottom of tmux.conf)
+run '~/.tmux/plugins/tpm/tpm'
+```
+
 
 ## 参考链接
 
