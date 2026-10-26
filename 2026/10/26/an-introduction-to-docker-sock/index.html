@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha256-yIDrPSXHZdOZhAqiBP7CKzIwMQmRCJ8UeB8Jo17YC4o=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.moralok.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.19.1","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="在使用 Docker 的过程中，总会看到 &#x2F;var&#x2F;run&#x2F;docker.sock 的身影。docker 是客户端程序，dockerd 是守护进程，两者的通信需要通过 docker.sock。  它究竟是什么？ 为什么运行 docker 命令需要 root 权限或加入 docker 组？ 为什么说映射 docker.sock 到容器中是不安全的行为？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="docker.sock 的测试和本质">
+<meta property="og:url" content="https://www.moralok.com/2026/10/26/an-introduction-to-docker-sock/index.html">
+<meta property="og:site_name" content="Moralok&#39;s Blog">
+<meta property="og:description" content="在使用 Docker 的过程中，总会看到 &#x2F;var&#x2F;run&#x2F;docker.sock 的身影。docker 是客户端程序，dockerd 是守护进程，两者的通信需要通过 docker.sock。  它究竟是什么？ 为什么运行 docker 命令需要 root 权限或加入 docker 组？ 为什么说映射 docker.sock 到容器中是不安全的行为？">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-26T01:43:59.000Z">
+<meta property="article:modified_time" content="2026-10-26T17:03:59.737Z">
+<meta property="article:author" content="Moralok">
+<meta property="article:tag" content="docker">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.moralok.com/2026/10/26/an-introduction-to-docker-sock/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.moralok.com/2026/10/26/an-introduction-to-docker-sock/","path":"2026/10/26/an-introduction-to-docker-sock/","title":"docker.sock 的测试和本质"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>docker.sock 的测试和本质 | Moralok's Blog</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2MBCXKHJL0"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-2MBCXKHJL0","only_pageview":false,"measure_protocol_api_secret":null}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Moralok's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">你在幼年时当快乐</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-links"><a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>友链</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#docker-sock-%E7%9A%84%E6%B5%8B%E8%AF%95"><span class="nav-number">1.</span> <span class="nav-text">docker.sock 的测试</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E7%AC%AC%E4%B8%89%E6%96%B9%E5%B7%A5%E5%85%B7"><span class="nav-number">1.1.</span> <span class="nav-text">使用第三方工具</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-A%EF%BC%9A%E4%BD%BF%E7%94%A8-curl"><span class="nav-number">1.1.1.</span> <span class="nav-text">方法 A：使用 curl</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95B%EF%BC%9A%E4%BD%BF%E7%94%A8-nc%EF%BC%88Netcat%EF%BC%89"><span class="nav-number">1.1.2.</span> <span class="nav-text">方法B：使用 nc（Netcat）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#docker-%E6%8C%87%E4%BB%A4%E7%9A%84%E6%9C%AC%E8%B4%A8"><span class="nav-number">1.2.</span> <span class="nav-text">docker 指令的本质</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E7%BC%96%E5%86%99%E7%9A%84%E7%A8%8B%E5%BA%8F"><span class="nav-number">1.3.</span> <span class="nav-text">使用编写的程序</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8-Java-%E7%BC%96%E5%86%99%E7%A8%8B%E5%BA%8F%E8%BF%9B%E8%A1%8C%E8%AF%BB%E5%86%99%E6%B5%8B%E8%AF%95%E3%80%82"><span class="nav-number">1.3.1.</span> <span class="nav-text">使用 Java 编写程序进行读写测试。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8-Python-%E7%BC%96%E5%86%99%E7%A8%8B%E5%BA%8F%E8%BF%9B%E8%A1%8C%E8%AF%BB%E5%86%99%E6%B5%8B%E8%AF%95"><span class="nav-number">1.3.2.</span> <span class="nav-text">使用 Python 编写程序进行读写测试</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#docker-sock-%E7%9A%84%E6%9C%AC%E8%B4%A8"><span class="nav-number">2.</span> <span class="nav-text">docker.sock 的本质</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%98%AF%E4%B8%80%E4%B8%AA-UDS"><span class="nav-number">2.1.</span> <span class="nav-text">是一个 UDS</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B-UDS-%E4%BF%A1%E6%81%AF"><span class="nav-number">2.2.</span> <span class="nav-text">查看 UDS 信息</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-A%EF%BC%9A%E4%BD%BF%E7%94%A8-ss"><span class="nav-number">2.2.1.</span> <span class="nav-text">方法 A：使用 ss</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%B9%E6%B3%95-B%EF%BC%9A%E4%BD%BF%E7%94%A8-lsof"><span class="nav-number">2.2.2.</span> <span class="nav-text">方法 B：使用 lsof</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E8%BF%9B%E7%A8%8B%E4%BF%A1%E6%81%AF"><span class="nav-number">2.2.3.</span> <span class="nav-text">查看进程信息</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9D%83%E9%99%90%E7%9A%84%E9%87%8D%E8%A6%81%E6%80%A7"><span class="nav-number">3.</span> <span class="nav-text">权限的重要性</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Moralok</p>
+  <div class="site-description" itemprop="description">却要知道，为这一切的事……</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">61</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">51</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/moralok" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;moralok" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.moralok.com/2026/10/26/an-introduction-to-docker-sock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Moralok">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Moralok's Blog">
+      <meta itemprop="description" content="却要知道，为这一切的事……">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="docker.sock 的测试和本质 | Moralok's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          docker.sock 的测试和本质
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-10-26 09:43:59" itemprop="dateCreated datePublished" datetime="2026-10-26T09:43:59+08:00">2026-10-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-10-27 01:03:59" itemprop="dateModified" datetime="2026-10-27T01:03:59+08:00">2026-10-27</time>
+    </span>
+
+  
+    <span id="/2026/10/26/an-introduction-to-docker-sock/" class="post-meta-item leancloud_visitors" data-flag-title="docker.sock 的测试和本质" title="阅读次数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">阅读次数：</span>
+      <span class="leancloud-visitors-count"></span>
+    </span>
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>2k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>7 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>在使用 <code>Docker</code> 的过程中，总会看到 <code>/var/run/docker.sock</code> 的身影。<code>docker</code> 是客户端程序，<code>dockerd</code> 是守护进程，两者的通信需要通过 <code>docker.sock</code>。</p>
+<ul>
+<li>它究竟是什么？</li>
+<li>为什么运行 <code>docker</code> 命令需要 <code>root</code> 权限或加入 <code>docker</code> 组？</li>
+<li>为什么说映射 <code>docker.sock</code> 到容器中是不安全的行为？</li>
+</ul>
+<span id="more"></span>
+
+<h2 id="docker-sock-的测试"><a href="#docker-sock-的测试" class="headerlink" title="docker.sock 的测试"></a>docker.sock 的测试</h2><p><strong>如何手动、朴素地和 <code>docker.sock</code> 通信，戳破它的神秘感？</strong></p>
+<h3 id="使用第三方工具"><a href="#使用第三方工具" class="headerlink" title="使用第三方工具"></a>使用第三方工具</h3><h4 id="方法-A：使用-curl"><a href="#方法-A：使用-curl" class="headerlink" title="方法 A：使用 curl"></a>方法 A：使用 curl</h4><p><code>curl</code> 原生支持通过参数指定 <code>Unix Socket</code> 文件，并手动构造 <code>HTTP</code> 请求：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl --unix-socket /var/run/docker.sock http://localhost/containers/json</span><br></pre></td></tr></table></figure>
+
+<p>参数说明：</p>
+<ul>
+<li><code>--unix-socket /var/run/docker.sock</code>：<strong>掐断网卡和 <code>TCP</code> 协议栈</strong>，直接把数据打包塞进这个本地文件对应的内核内存里</li>
+<li><code>http://localhost</code> 是一个占位符（因为 <code>UDS</code> 不需要 <code>IP</code>），而 <code>/containers/json</code> 就是 <code>Docker</code> 官方定义的“列出正在运行的容器”的 <code>HTTP REST API</code> 路由</li>
+</ul>
+<p>返回结果：</p>
+<figure class="highlight console"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">[&#123;&quot;Id&quot;:&quot;919cacb14bff1838b3cb0c3c1332f53d0692c89018d5282571f497594171fe47&quot;,&quot;Names&quot;:[&quot;/reverent_meninsky&quot;],&quot;Image&quot;:&quot;nginx&quot;,&quot;ImageID&quot;:&quot;sha256:4c41e2d0a3a55b325ed572cd0200bdb72af1433c3daa2bca6ef8eea68ce504a2&quot;,&quot;ImageManifestDescriptor&quot;:&#123;&quot;mediaType&quot;:&quot;application/vnd.oci.image.manifest.v1+json&quot;,&quot;digest&quot;:&quot;sha256:59a9ae22b8933b536391e6c1708fa761297e922809c97675c5a56ba316be62af&quot;,&quot;size&quot;:2290,&quot;annotations&quot;:&#123;&quot;com.docker.official-images.bashbrew.arch&quot;:&quot;amd64&quot;,&quot;org.opencontainers.image.base.digest&quot;:&quot;sha256:4876fdea29cac1a33a3195f1eb1952feb1fca7dd6dd00be3e2f1879cf20d34d2&quot;,&quot;org.opencontainers.image.base.name&quot;:&quot;debian:trixie-slim&quot;,&quot;org.opencontainers.image.created&quot;:&quot;2026-10-21T22:16:50Z&quot;,&quot;org.opencontainers.image.revision&quot;:&quot;6fabb4c960a02a1e576d2789974c45f4cd2aa854&quot;,&quot;org.opencontainers.image.source&quot;:&quot;https://github.com/nginx/docker-nginx.git#6fabb4c960a02a1e576d2789974c45f4cd2aa854:mainline/debian&quot;,&quot;org.opencontainers.image.url&quot;:&quot;https://hub.docker.com/_/nginx&quot;,&quot;org.opencontainers.image.version&quot;:&quot;1.31.8&quot;&#125;,&quot;platform&quot;:&#123;&quot;architecture&quot;:&quot;amd64&quot;,&quot;os&quot;:&quot;linux&quot;&#125;&#125;,&quot;Command&quot;:&quot;/docker-entrypoint.sh nginx -g &#x27;daemon off;&#x27;&quot;,&quot;Created&quot;:1793025621,&quot;Ports&quot;:[&#123;&quot;IP&quot;:&quot;&quot;,&quot;PrivatePort&quot;:80,&quot;Type&quot;:&quot;tcp&quot;&#125;],&quot;Labels&quot;:&#123;&quot;maintainer&quot;:&quot;NGINX Docker Maintainers &lt;docker-maint@nginx.com&gt;&quot;&#125;,&quot;State&quot;:&quot;running&quot;,&quot;Status&quot;:&quot;Up 4 minutes&quot;,&quot;HostConfig&quot;:&#123;&quot;NetworkMode&quot;:&quot;bridge&quot;&#125;,&quot;Health&quot;:&#123;&quot;Status&quot;:&quot;none&quot;,&quot;FailingStreak&quot;:0&#125;,&quot;NetworkSettings&quot;:&#123;&quot;Networks&quot;:&#123;&quot;bridge&quot;:&#123;&quot;IPAMConfig&quot;:null,&quot;Links&quot;:null,&quot;Aliases&quot;:null,&quot;DriverOpts&quot;:null,&quot;GwPriority&quot;:0,&quot;NetworkID&quot;:&quot;7990194027e5bd07a1a19a1e045adb037312e1a29c65d69153c5a94f29548d0b&quot;,&quot;EndpointID&quot;:&quot;2377548cf9d62c084155f0873b3b56d46faf2e89dbe21da0a468049748cce234&quot;,&quot;Gateway&quot;:&quot;172.17.0.1&quot;,&quot;IPAddress&quot;:&quot;172.17.0.2&quot;,&quot;MacAddress&quot;:&quot;c2:4e:9e:85:67:75&quot;,&quot;IPPrefixLen&quot;:16,&quot;IPv6Gateway&quot;:&quot;&quot;,&quot;GlobalIPv6Address&quot;:&quot;&quot;,&quot;GlobalIPv6PrefixLen&quot;:0,&quot;DNSNames&quot;:null&#125;&#125;&#125;,&quot;Mounts&quot;:[]&#125;]</span><br></pre></td></tr></table></figure>
+
+<h4 id="方法B：使用-nc（Netcat）"><a href="#方法B：使用-nc（Netcat）" class="headerlink" title="方法B：使用 nc（Netcat）"></a>方法B：使用 nc（Netcat）</h4><ol>
+<li>连接 <code>Socket</code> 文件： <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nc -U /var/run/docker.sock</span><br></pre></td></tr></table></figure></li>
+<li>手动输入 <code>HTTP</code> 请求报文（两次回车发送） <figure class="highlight console"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">GET /containers/json HTTP/1.1</span><br><span class="line">Host: docker.sock</span><br></pre></td></tr></table></figure></li>
+<li>返回结果 <figure class="highlight console"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Api-Version: 1.56</span><br><span class="line">Content-Type: application/json</span><br><span class="line">Docker-Experimental: false</span><br><span class="line">Ostype: linux</span><br><span class="line">Server: Docker/29.9.2 (linux)</span><br><span class="line">Date: Mon, 26 Oct 2026 14:51:21 GMT</span><br><span class="line">Content-Length: 1856</span><br><span class="line"></span><br><span class="line">[&#123;&quot;Id&quot;:&quot;919cacb14bff1838b3cb0c3c1332f53d0692c89018d5282571f497594171fe47&quot;,&quot;Names&quot;:[&quot;/reverent_meninsky&quot;],&quot;Image&quot;:&quot;nginx&quot;,&quot;ImageID&quot;:&quot;sha256:4c41e2d0a3a55b325ed572cd0200bdb72af1433c3daa2bca6ef8eea68ce504a2&quot;,&quot;ImageManifestDescriptor&quot;:&#123;&quot;mediaType&quot;:&quot;application/vnd.oci.image.manifest.v1+json&quot;,&quot;digest&quot;:&quot;sha256:59a9ae22b8933b536391e6c1708fa761297e922809c97675c5a56ba316be62af&quot;,&quot;size&quot;:2290,&quot;annotations&quot;:&#123;&quot;com.docker.official-images.bashbrew.arch&quot;:&quot;amd64&quot;,&quot;org.opencontainers.image.base.digest&quot;:&quot;sha256:4876fdea29cac1a33a3195f1eb1952feb1fca7dd6dd00be3e2f1879cf20d34d2&quot;,&quot;org.opencontainers.image.base.name&quot;:&quot;debian:trixie-slim&quot;,&quot;org.opencontainers.image.created&quot;:&quot;2026-10-21T22:16:50Z&quot;,&quot;org.opencontainers.image.revision&quot;:&quot;6fabb4c960a02a1e576d2789974c45f4cd2aa854&quot;,&quot;org.opencontainers.image.source&quot;:&quot;https://github.com/nginx/docker-nginx.git#6fabb4c960a02a1e576d2789974c45f4cd2aa854:mainline/debian&quot;,&quot;org.opencontainers.image.url&quot;:&quot;https://hub.docker.com/_/nginx&quot;,&quot;org.opencontainers.image.version&quot;:&quot;1.31.8&quot;&#125;,&quot;platform&quot;:&#123;&quot;architecture&quot;:&quot;amd64&quot;,&quot;os&quot;:&quot;linux&quot;&#125;&#125;,&quot;Command&quot;:&quot;/docker-entrypoint.sh nginx -g &#x27;daemon off;&#x27;&quot;,&quot;Created&quot;:1793025621,&quot;Ports&quot;:[&#123;&quot;IP&quot;:&quot;&quot;,&quot;PrivatePort&quot;:80,&quot;Type&quot;:&quot;tcp&quot;&#125;],&quot;Labels&quot;:&#123;&quot;maintainer&quot;:&quot;NGINX Docker Maintainers &lt;docker-maint@nginx.com&gt;&quot;&#125;,&quot;State&quot;:&quot;running&quot;,&quot;Status&quot;:&quot;Up 10 minutes&quot;,&quot;HostConfig&quot;:&#123;&quot;NetworkMode&quot;:&quot;bridge&quot;&#125;,&quot;Health&quot;:&#123;&quot;Status&quot;:&quot;none&quot;,&quot;FailingStreak&quot;:0&#125;,&quot;NetworkSettings&quot;:&#123;&quot;Networks&quot;:&#123;&quot;bridge&quot;:&#123;&quot;IPAMConfig&quot;:null,&quot;Links&quot;:null,&quot;Aliases&quot;:null,&quot;DriverOpts&quot;:null,&quot;GwPriority&quot;:0,&quot;NetworkID&quot;:&quot;7990194027e5bd07a1a19a1e045adb037312e1a29c65d69153c5a94f29548d0b&quot;,&quot;EndpointID&quot;:&quot;2377548cf9d62c084155f0873b3b56d46faf2e89dbe21da0a468049748cce234&quot;,&quot;Gateway&quot;:&quot;172.17.0.1&quot;,&quot;IPAddress&quot;:&quot;172.17.0.2&quot;,&quot;MacAddress&quot;:&quot;c2:4e:9e:85:67:75&quot;,&quot;IPPrefixLen&quot;:16,&quot;IPv6Gateway&quot;:&quot;&quot;,&quot;GlobalIPv6Address&quot;:&quot;&quot;,&quot;GlobalIPv6PrefixLen&quot;:0,&quot;DNSNames&quot;:null&#125;&#125;&#125;,&quot;Mounts&quot;:[]&#125;]</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h3 id="docker-指令的本质"><a href="#docker-指令的本质" class="headerlink" title="docker 指令的本质"></a>docker 指令的本质</h3><p>以 <code>docker ps</code> 为例：</p>
+<ol>
+<li>输入 <code>docker ps</code></li>
+<li>终端执行 <code>/usr/bin/docker</code> 二进制程序。（这是一个 <code>Go</code> 语言编写的客户端 <code>CLI</code> 工具）</li>
+<li><code>CLI</code> 工具读取环境变量（默认寻找 <code>/var/run/docker.sock</code> 文件）</li>
+<li><code>CLI</code> 工具在内存中组装出一个标准的 <code>HTTP</code> 报文 <figure class="highlight console"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">GET /containers/json HTTP/1.1\r\nHost: docker.sock\r\n\r\n</span><br></pre></td></tr></table></figure></li>
+<li><code>CLI</code> 工具通过内核管道，将这些字符写入 <code>/var/run/docker.sock</code></li>
+<li><code>dockerd</code> 的内置 <code>HTTP</code> 路由解析器发现是 <code>GET /containers/json</code>，于是调用内部函数，向 <code>Linux</code> 内核（<code>Cgroups</code> 和 <code>Namespaces</code>）查询当前有哪些隔离进程在运行</li>
+<li><code>dockerd</code> 将查询到的结构体格式化为一段标准 <code>JSON</code> 文本，包裹在 <code>HTTP</code> 响应报文中返回</li>
+<li><code>CLI</code> 工具收到响应后，解析并显示到 <code>console</code></li>
+</ol>
+<h3 id="使用编写的程序"><a href="#使用编写的程序" class="headerlink" title="使用编写的程序"></a>使用编写的程序</h3><h4 id="使用-Java-编写程序进行读写测试。"><a href="#使用-Java-编写程序进行读写测试。" class="headerlink" title="使用 Java 编写程序进行读写测试。"></a>使用 <code>Java</code> 编写程序进行读写测试。</h4><blockquote>
+<p><code>Java 16+</code> 官方原生引入了对 <code>Unix Domain Socket</code> 的支持。</p>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.IOException;</span><br><span class="line"><span class="keyword">import</span> java.nio.ByteBuffer;</span><br><span class="line"><span class="keyword">import</span> java.nio.channels.SocketChannel;</span><br><span class="line"><span class="keyword">import</span> java.net.StandardProtocolFamily;</span><br><span class="line"><span class="keyword">import</span> java.net.UnixDomainSocketAddress;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DockerSockTest</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> IOException &#123;</span><br><span class="line">        <span class="comment">// 1. 明确告诉内核：我要创建一个 Unix 域套接字（而不是普通的 TCP 套接字）</span></span><br><span class="line">        <span class="type">UnixDomainSocketAddress</span> <span class="variable">address</span> <span class="operator">=</span> UnixDomainSocketAddress.of(<span class="string">&quot;/var/run/docker.sock&quot;</span>);</span><br><span class="line">        <span class="type">SocketChannel</span> <span class="variable">channel</span> <span class="operator">=</span> SocketChannel.open(StandardProtocolFamily.UNIX);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 2. 像连接服务器端口一样，连接这个套接字文件</span></span><br><span class="line">        channel.connect(address);</span><br><span class="line">        System.out.println(<span class="string">&quot;成功连接到底层 docker.sock 文件！&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 3. 纯手工拼接标准的 HTTP 请求原始报文（模拟 docker ps 的底层行为）</span></span><br><span class="line">        <span class="type">String</span> <span class="variable">httpRequest</span> <span class="operator">=</span> <span class="string">&quot;GET /containers/json HTTP/1.1\r\n&quot;</span> +</span><br><span class="line">                             <span class="string">&quot;Host: docker.sock\r\n&quot;</span> +</span><br><span class="line">                             <span class="string">&quot;Connection: close\r\n\r\n&quot;</span>; <span class="comment">// 两次回车代表请求头结束</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">// 4. 将字符串转为字节，直接往内核管道里写数据</span></span><br><span class="line">        <span class="type">ByteBuffer</span> <span class="variable">writeBuffer</span> <span class="operator">=</span> ByteBuffer.wrap(httpRequest.getBytes());</span><br><span class="line">        channel.write(writeBuffer);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 5. 循环读取内核从管道另一端吐回来的 HTTP 响应文本</span></span><br><span class="line">        System.out.println(<span class="string">&quot;--- 收到来自 Docker 守护进程的原始 HTTP 响应 ---&quot;</span>);</span><br><span class="line">        <span class="type">ByteBuffer</span> <span class="variable">readBuffer</span> <span class="operator">=</span> ByteBuffer.allocate(<span class="number">1024</span>);</span><br><span class="line">        <span class="keyword">while</span> (channel.read(readBuffer) != -<span class="number">1</span>) &#123;</span><br><span class="line">            readBuffer.flip();</span><br><span class="line">            <span class="comment">// 直接将字节转换为文本打印在屏幕上</span></span><br><span class="line">            System.out.print(<span class="keyword">new</span> <span class="title class_">String</span>(readBuffer.array(), <span class="number">0</span>, readBuffer.limit()));</span><br><span class="line">            readBuffer.clear();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        channel.close();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>测试结果：</p>
+<figure class="highlight console"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">成功连接到底层 docker.sock 文件！</span><br><span class="line">--- 收到来自 Docker 守护进程的原始 HTTP 响应 ---</span><br><span class="line">HTTP/1.1 200 OK</span><br><span class="line">Api-Version: 1.56</span><br><span class="line">Content-Type: application/json</span><br><span class="line">Docker-Experimental: false</span><br><span class="line">Ostype: linux</span><br><span class="line">Server: Docker/29.9.2 (linux)</span><br><span class="line">Date: Mon, 26 Oct 2026 15:18:42 GMT</span><br><span class="line">Content-Length: 1856</span><br><span class="line">Connection: close</span><br><span class="line"></span><br><span class="line">[&#123;&quot;Id&quot;:&quot;919cacb14bff1838b3cb0c3c1332f53d0692c89018d5282571f497594171fe47&quot;,&quot;Names&quot;:[&quot;/reverent_meninsky&quot;],&quot;Image&quot;:&quot;nginx&quot;,&quot;ImageID&quot;:&quot;sha256:4c41e2d0a3a55b325ed572cd0200bdb72af1433c3daa2bca6ef8eea68ce504a2&quot;,&quot;ImageManifestDescriptor&quot;:&#123;&quot;mediaType&quot;:&quot;application/vnd.oci.image.manifest.v1+json&quot;,&quot;digest&quot;:&quot;sha256:59a9ae22b8933b536391e6c1708fa761297e922809c97675c5a56ba316be62af&quot;,&quot;size&quot;:2290,&quot;annotations&quot;:&#123;&quot;com.docker.official-images.bashbrew.arch&quot;:&quot;amd64&quot;,&quot;org.opencontainers.image.base.digest&quot;:&quot;sha256:4876fdea29cac1a33a3195f1eb1952feb1fca7dd6dd00be3e2f1879cf20d34d2&quot;,&quot;org.opencontainers.image.base.name&quot;:&quot;debian:trixie-slim&quot;,&quot;org.opencontainers.image.created&quot;:&quot;2026-10-21T22:16:50Z&quot;,&quot;org.opencontainers.image.revision&quot;:&quot;6fabb4c960a02a1e576d2789974c45f4cd2aa854&quot;,&quot;org.opencontainers.image.source&quot;:&quot;https://github.com/nginx/docker-nginx.git#6fabb4c960a02a1e576d2789974c45f4cd2aa854:mainline/debian&quot;,&quot;org.opencontainers.image.url&quot;:&quot;https://hub.docker.com/_/nginx&quot;,&quot;org.opencontainers.image.version&quot;:&quot;1.31.8&quot;&#125;,&quot;platform&quot;:&#123;&quot;architecture&quot;:&quot;amd64&quot;,&quot;os&quot;:&quot;linux&quot;&#125;&#125;,&quot;Command&quot;:&quot;/docker-entrypoint.sh nginx -g &#x27;daemon off;&#x27;&quot;,&quot;Created&quot;:1793025621,&quot;Ports&quot;:[&#123;&quot;IP&quot;:&quot;&quot;,&quot;PrivatePort&quot;:80,&quot;Type&quot;:&quot;tcp&quot;&#125;],&quot;Labels&quot;:&#123;&quot;maintainer&quot;:&quot;NGINX Docker Maintainers &lt;docker-maint@nginx.com&gt;&quot;&#125;,&quot;State&quot;:&quot;running&quot;,&quot;Status&quot;:&quot;Up 38 minutes&quot;,&quot;HostConfig&quot;:&#123;&quot;NetworkMode&quot;:&quot;bridge&quot;&#125;,&quot;Health&quot;:&#123;&quot;Status&quot;:&quot;none&quot;,&quot;FailingStreak&quot;:0&#125;,&quot;NetworkSettings&quot;:&#123;&quot;Networks&quot;:&#123;&quot;bridge&quot;:&#123;&quot;IPAMConfig&quot;:null,&quot;Links&quot;:null,&quot;Aliases&quot;:null,&quot;DriverOpts&quot;:null,&quot;GwPriority&quot;:0,&quot;NetworkID&quot;:&quot;7990194027e5bd07a1a19a1e045adb037312e1a29c65d69153c5a94f29548d0b&quot;,&quot;EndpointID&quot;:&quot;2377548cf9d62c084155f0873b3b56d46faf2e89dbe21da0a468049748cce234&quot;,&quot;Gateway&quot;:&quot;172.17.0.1&quot;,&quot;IPAddress&quot;:&quot;172.17.0.2&quot;,&quot;MacAddress&quot;:&quot;c2:4e:9e:85:67:75&quot;,&quot;IPPrefixLen&quot;:16,&quot;IPv6Gateway&quot;:&quot;&quot;,&quot;GlobalIPv6Address&quot;:&quot;&quot;,&quot;GlobalIPv6PrefixLen&quot;:0,&quot;DNSNames&quot;:null&#125;&#125;&#125;,&quot;Mounts&quot;:[]&#125;]</span><br></pre></td></tr></table></figure>
+
+<h4 id="使用-Python-编写程序进行读写测试"><a href="#使用-Python-编写程序进行读写测试" class="headerlink" title="使用 Python 编写程序进行读写测试"></a>使用 Python 编写程序进行读写测试</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"></span><br><span class="line"><span class="comment"># 1. 创建一个 Unix Domain Socket (AF_UNIX) 类型的套接字</span></span><br><span class="line">s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 建立连接（像连接 IP 端口一样连接这个本地文件路径）</span></span><br><span class="line">s.connect(<span class="string">&quot;/var/run/docker.sock&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 纯手工发送符合标准 HTTP/1.1 规范的文本请求（两次回车代表请求结束）</span></span><br><span class="line">s.sendall(<span class="string">b&quot;GET /containers/json HTTP/1.1\r\nHost: localhost\r\n\r\n&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. 接收并打印来自 Docker 守护进程返回的原始 HTTP 响应和 JSON 数据</span></span><br><span class="line"><span class="built_in">print</span>(s.recv(<span class="number">4096</span>).decode(<span class="string">&quot;utf-8&quot;</span>))</span><br></pre></td></tr></table></figure>
+
+<h2 id="docker-sock-的本质"><a href="#docker-sock-的本质" class="headerlink" title="docker.sock 的本质"></a>docker.sock 的本质</h2><h3 id="是一个-UDS"><a href="#是一个-UDS" class="headerlink" title="是一个 UDS"></a>是一个 UDS</h3><p><code>docker.sock</code> 是一个 <code>Unix</code> 域套接字（<code>Unix Domain Socket</code>），简称 <code>UDS</code>。</p>
+<p>在 Linux 操作系统中，一切皆文件。<code>/var/run/docker.sock</code> 在文件系统中表现为一个<strong>特殊的套接字文件</strong>。</p>
+<ul>
+<li>不走网络协议栈</li>
+<li>纯内存进程间通信（<code>IPC，Inter-Process Communication</code>，进程间通信）</li>
+<li>监听进程 <code>dockerd</code></li>
+</ul>
+<p><code>UDS</code> 的本质是 <strong>Linux 内核在内存中开辟的一个高效率、带文件权限的 IPC 管道</strong>。</p>
+<p>它虽然在文件系统中表现为一个文件（<code>/var/run/docker.dock</code>），但不能像打开普通文本文件一样用 <code>cat</code> 或 <code>echo</code> 去读写它。这个文件在文件系统中只是一个挂载点（入口标识符），它的真实作用有两个：</p>
+<ol>
+<li>权限防火墙：利用 Linux 的文件权限机制。谁有这个文件的读写权，谁就能和对应的内核内存管道通信。</li>
+<li>进程寻址：让客户端进程能够通过一个路径找到服务端进程。</li>
+</ol>
+<p>而 <code>docker.sock</code> 的权限如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">ls</span> -al /var/run/docker.sock</span><br></pre></td></tr></table></figure>
+
+<p><code>owner</code> 为 <code>root</code>，<code>group</code> 为 <code>docker</code>，两者都有读写权限。</p>
+<figure class="highlight console"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">srw-rw---- 1 root docker 0 Oct 26 22:37 /var/run/docker.sock</span><br></pre></td></tr></table></figure>
+
+<h3 id="查看-UDS-信息"><a href="#查看-UDS-信息" class="headerlink" title="查看 UDS 信息"></a>查看 UDS 信息</h3><p><strong>如何根据 UDS 文件名，查找正在监听它的真实进程 <code>ID</code>？</strong></p>
+<h4 id="方法-A：使用-ss"><a href="#方法-A：使用-ss" class="headerlink" title="方法 A：使用 ss"></a>方法 A：使用 ss</h4><p><code>ss</code> 是现代 Linux 系统中用来查看套接字状态的终极工具（替代 netstat）</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo ss -xpl | grep docker.sock</span><br></pre></td></tr></table></figure>
+
+<p>返回结果：</p>
+<figure class="highlight console"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">u_str LISTEN 0      4096      /run/docker.sock 1510334      * 0    users:((&quot;dockerd&quot;,pid=669273,fd=5),(&quot;systemd&quot;,pid=1,fd=76))</span><br></pre></td></tr></table></figure>
+
+<h4 id="方法-B：使用-lsof"><a href="#方法-B：使用-lsof" class="headerlink" title="方法 B：使用 lsof"></a>方法 B：使用 lsof</h4><blockquote>
+<p><code>lsof</code> 意为 <code>List Open Files</code></p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo lsof /var/run/docker.sock</span><br></pre></td></tr></table></figure>
+
+<p>返回结果：</p>
+<figure class="highlight console"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">COMMAND    PID USER FD   TYPE             DEVICE SIZE/OFF    NODE NAME</span><br><span class="line">systemd      1 root 76u  unix 0x0000000094dea39e      0t0 1510334 /run/docker.sock type=STREAM (LISTEN)</span><br><span class="line">dockerd 669273 root  5u  unix 0x0000000094dea39e      0t0 1510334 /run/docker.sock type=STREAM (LISTEN)</span><br></pre></td></tr></table></figure>
+
+<h4 id="查看进程信息"><a href="#查看进程信息" class="headerlink" title="查看进程信息"></a>查看进程信息</h4><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ps -fp 669273</span><br></pre></td></tr></table></figure>
+
+<p>返回结果：</p>
+<figure class="highlight console"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">UID          PID    PPID  C STIME TTY          TIME CMD</span><br><span class="line">root      669273       1  0 22:37 ?        00:00:02 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock</span><br></pre></td></tr></table></figure>
+
+<h2 id="权限的重要性"><a href="#权限的重要性" class="headerlink" title="权限的重要性"></a>权限的重要性</h2><p>在 <code>Linux</code> 内核眼里，没有权限高低的客户端工具，只有是否持有 <code>Socket</code> 文件读写权限的进程。如果被入侵，黑客可以利用简单的 <code>POST</code> 请求去实现容器创建或宿主机提权。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/docker/" rel="tag"># docker</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2026/10/11/vaultwarden-backup-smtp-troubleshooting/" rel="prev" title="Vaultwarden Backup 邮件通知排障：代理、认证与容器测试">
+                  <i class="fa fa-angle-left"></i> Vaultwarden Backup 邮件通知排障：代理、认证与容器测试
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Moralok</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">165k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:11</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.4.1/search.js" integrity="sha256-1kfA5uHPf65M5cphT2dvymhkuyHPQp5A53EGZOnOLmc=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+
+
+  
+
+
+  <script class="next-config" data-name="leancloud_visitors" type="application/json">{"enable":true,"app_id":"3EC6DlIt15eVYStwSVsDsQ2P-MdYXbMMI","app_key":"KKBQicvLunsmAfgH3DJJXvng","server_url":null,"security":false}</script>
+  <script src="/js/third-party/statistics/lean-analytics.js"></script>
+
+
+
+</body>
+</html>
