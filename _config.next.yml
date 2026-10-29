@@ -72,7 +72,7 @@ local_search:
 
 # leancloud_counter_security
 leancloud_visitors:
-  enable: true
+  enable: false
   app_id: 3EC6DlIt15eVYStwSVsDsQ2P-MdYXbMMI
   app_key: KKBQicvLunsmAfgH3DJJXvng
   security: false
@@ -80,7 +80,7 @@ leancloud_visitors:
 # Google Analytics
 # See: https://analytics.google.com
 google_analytics:
-  tracking_id: G-2MBCXKHJL0
+  tracking_id:
   # By default, NexT will load an external gtag.js script on your site.
   # If you only need the pageview feature, set the following option to true to get a better performance.
   only_pageview: false

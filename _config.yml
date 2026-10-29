@@ -125,6 +125,6 @@ search:
 
 # hexo-leancloud-counter-security
 leancloud_counter_security:
-  enable_sync: true
+  enable_sync: false
   app_id: 3EC6DlIt15eVYStwSVsDsQ2P-MdYXbMMI
   app_key: KKBQicvLunsmAfgH3DJJXvng
