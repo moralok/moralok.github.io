@@ -1,16 +1,20 @@
 ---
-title: Tmux 常用命令和快捷键
+title: Tmux 常用命令、快捷键和个人实践
 date: 2023-06-29 18:44:44
 tags: [tmux]
 ---
 
-本文记录了 `Tmux` 常用命令和快捷键以及参考 `AI` 提供的最佳实践形成的个人实践作为备忘笔记。
+本文记录了 `Tmux` 常用命令、快捷键和个人实践作为备忘笔记。
+
+> Tmux 发音 "tee-muhks" (tˈiː.mʌks).
 
 <!-- more -->
 
 ## Tmux 是什么
 
-`Tmux` 是一个终端复用器（`Terminal Multiplexer`），它可以将终端的会话和窗口解绑分离，达到窗口关闭，会话不终止，并且还能使用窗口再次绑定目标会话的效果，从而避免因为网络中断或者窗口关闭导致会话中运行的进程终止。
+`Tmux` 是一个终端复用器（`Terminal Multiplexer`），它可以将终端的会话和窗口解绑分离，达到“窗口关闭，会话不终止，并且还能使用窗口再次绑定目标会话”的效果，从而避免因为网络中断或者窗口关闭导致会话中运行的进程终止。
+
+### 安装
 
 `Ubuntu server 20.04` 及后续版本默认已安装 `Tmux`。如果没有，可以通过以下命令安装：
 
@@ -19,170 +23,118 @@ sudo apt update
 sudo apt-get install tmux
 ```
 
+更多安装方式参考官方 Wiki 文档 [Installing tmux](https://github.com/tmux/tmux/wiki/Installing)。
+
 ## 基本用法
 
-### 会话管理
+### 会话（Sesssion）管理
 
-#### 新建会话
+**命令**
 
-```bash
-tmux new -s <session-name>
-```
+| 操作 | 命令 | 说明 |
+|---|---|---|
+| 新建会话 | `tmux new -s <session-name>` | |
+| 分离会话 | `tmux detach` | |
+| 查看会话列表 | `tmux ls` | |
+| 接入会话 | `tmux attach -t <session-name>` | 按名称接入 |
+| 杀死会话 | `tmux kill-session -t <session-name>` | 按名称指定会话 |
+| 切换会话 | `tmux switch -t <session-name>` | 按名称切换 |
+| 重命名会话 | `tmux rename-session -t <old> <new>` | 指定旧名称和新名称 |
+| 重命名当前会话 | `tmux rename-session <new>` | |
 
-#### 分离会话
+**快捷键**
 
-```bash
-tmux detach
-```
+| 操作 | 快捷键 | 说明 |
+|---|---|---|
+| 分离当前会话 | `Ctrl+b d` | `detach` |
+| 查看并选择会话 | `Ctrl+b s` | `session` |
+| 重命名当前会话 | `Ctrl+b $` | |
+| 发送 EOF | `Ctrl+d` | 在空的 shell 提示符下通常会退出当前 shell |
 
-#### 查看会话列表
-
-```bash
-tmux ls
-```
-
-#### 接入会话
-
-```bash
-tmux attach -t <session-name>
-tmux attach -t <session-id>
-```
-
-#### 杀死会话
-
-```bash
-tmux kill-session -t <session-name>
-tmux kill-session -t <session-id>
-```
-
-#### 切换会话
-
-```bash
-tmux switch -t <session-name>
-tmux switch -t <session-id>
-```
-
-#### 重命名会话
-
-```bash
-tmux rename-session -t <old> <new>
-tmux rename-session <new>
-```
-
-#### 会话快捷键
-
-> 辅助记忆：detach，session
-
-- **`Ctrl+b d`：分离当前会话**
-- **`Ctrl+b s`：查看会话列表并选择**
-- **`Ctrl+b $`：重命名当前会话名称**
-- **`Ctrl+d`：关闭当前会话**
+`Ctrl+d` 不是 tmux 的前缀快捷键，而是向当前窗格中的程序发送 EOF。若 shell 因此退出，tmux 会关闭对应窗格；如果这是窗口里的最后一个窗格，窗口也会关闭；如果该窗口是会话中的最后一个窗口，会话就会结束。若前台运行的是其他程序，`Ctrl+d` 的效果取决于该程序如何处理输入结束。
 
 
-### 窗口管理
+### 窗口（Window）管理
 
-#### 新建窗口
+**命令**
 
-```bash
-tmux new-window -n <window-name>
-```
+| 操作 | 命令 | 说明 |
+|---|---|---|
+| 新建窗口 | `tmux new-window -n <window-name>` | 指定窗口名称 |
+| 关闭窗口 | `tmux kill-window -t <window-name>` | 按名称关闭 |
+| 关闭当前窗口 | `tmux kill-window` | |
+| 切换窗口 | `tmux select-window -t <window-name>` | 按名称切换 |
+| 切换窗口 | `tmux select-window -t <window-id>` | 按 ID 切换 |
+| 重命名窗口 | `tmux rename-window -t <old> <new>` | 指定旧名称和新名称 |
+| 重命名当前窗口 | `tmux rename-window <new>` | |
+| 交换当前窗口 | `tmux swap-window -t <target-id>` | 与指定编号的窗口交换位置 |
+| 交换指定窗口 | `tmux swap-window -s <source-id> -t <target-id>` | 指定源窗口和目标窗口 |
+| 移动窗口 | `tmux move-window -t <target-id>` | 将当前窗口移动到指定位置 |
 
-#### 关闭窗口
+**快捷键**
 
-```bash
-tmux kill-window -t <window-name>
-tmux kill-window
-```
-
-#### 切换窗口
-
-```bash
-tmux select-window -t <window-name>
-tmux select-window -t <window-id>
-```
-
-#### 重命名窗口
-
-```bash
-tmux rename-window -t <old> <new>
-tmux rename-window <new>
-```
-
-#### 窗口快捷键
-
-- **`Ctrl+b c`：创建一个新窗口，状态栏会显示窗口信息**
-- `Ctrl+b p`：切换到上一个窗口，prev
-- `Ctrl+b n`：切换到下一个窗口，next
-- `Ctrl+b <number>`：切换到指定编号的窗口
-- **`Ctrl+b w`：查看窗口列表并选择，window**
-- **`Ctrl+b ,`：重命名当前窗口**
-- **`Ctrl+b &`：关闭当前窗口**
+| 操作 | 快捷键 | 说明 |
+|---|---|---|
+| 新建窗口 | `Ctrl+b c` | 状态栏会显示窗口信息 |
+| 切换到上一个窗口 | `Ctrl+b p` | `prev` |
+| 切换到下一个窗口 | `Ctrl+b n` | `next` |
+| 切换到指定窗口 | `Ctrl+b <window-id>` | 按 ID 切换 |
+| 查看并选择窗口 | `Ctrl+b w` | `window` |
+| 重命名当前窗口 | `Ctrl+b ,` | |
+| 关闭当前窗口 | `Ctrl+b &` | |
 
 
-### 窗格管理
+### 窗格（Pane）管理
 
-#### 划分窗格
+**命令**
 
-> 辅助记忆：vertical，horizontal
+| 操作 | 命令 | 说明 |
+|---|---|---|
+| 划分窗格 | `tmux split-window [-v]` | `vertical` |
+| 划分窗格 | `tmux split-window -h` | `horizontal` |
+| 移动焦点 | `tmux select-pane -U` | 向上，`upper` |
+| 移动焦点 | `tmux select-pane -D` | 向下，`down` |
+| 移动焦点 | `tmux select-pane -L` | 向左，`left` |
+| 移动焦点 | `tmux select-pane -R` | 向右，`right` |
+| 交换窗格 | `tmux swap-pane -U` | 与上一个窗格交换位置 |
+| 交换窗格 | `tmux swap-pane -D` | 与下一个窗格交换位置 |
 
-```bash
-tmux split-window [-v]
-tmux split-window -h
-```
+**快捷键**
 
-#### 移动光标
-
-> 辅助记忆：upper，down，left，right。
-
-```bash
-tmux select-pane -U
-tmux select-pane -D
-tmux select-pane -L
-tmux select-pane -R
-```
-
-#### 交换窗格
-
-当前窗格和上一个或下一个窗格交换位置。
-
-```bash
-tmux swap-pane -U
-tmux swap-pane -D
-```
-
-#### 窗格快捷键
-
-- **`Ctrl+b "`：上下划分窗格**
-- **`Ctrl+b %`：左右划分窗格**
-- **`Ctrl+b <arrow key>`：使用方向键切换窗格**
-- `Ctrl+b ;`：光标切换到上一个窗格
-- `Ctrl+b o`：光标切换到下一个窗格
-- `Ctrl+b {`：当前窗格和上一个窗格交换位置
-- `Ctrl+b }`：当前窗格和下一个窗格交换位置
-- **`Ctrl+b x`：关闭当前窗格**
-- `Ctrl+b !`：将当前窗格拆分为一个独立窗口
-- `Ctrl+b z`：当前窗格全屏显示，再使用一次会变回原来大小，状态栏会有大写的 Z 标识
-- `Ctrl+b q`：显示窗格编号
+| 操作 | 快捷键 | 说明 |
+|---|---|---|
+| 上下划分窗格 | `Ctrl+b "` | |
+| 左右划分窗格 | `Ctrl+b %` | |
+| 切换窗格 | `Ctrl+b <arrow key>` | 使用方向键选择窗格 |
+| 切换到上一个窗格 | `Ctrl+b ;` | |
+| 切换到下一个窗格 | `Ctrl+b o` | |
+| 与上一个窗格交换位置 | `Ctrl+b {` | |
+| 与下一个窗格交换位置 | `Ctrl+b }` | |
+| 关闭当前窗格 | `Ctrl+b x` | |
+| 拆分为独立窗口 | `Ctrl+b !` | |
+| 全屏显示当前窗格 | `Ctrl+b z` | 再按一次恢复原大小；状态栏会显示大写的 Z |
+| 显示窗格编号 | `Ctrl+b q` | |
 
 
 ### 其他命令
 
-#### 进入翻页模式
+**命令**
 
-- **`Ctrl+b [`：进入翻页模式**
-- `q`：退出翻页模式
+| 操作 | 命令 | 说明 |
+|---|---|---|
+| 列出所有快捷键及对应的 tmux 命令 | `tmux list-keys` | |
+| 列出所有 tmux 命令及其参数 | `tmux list-commands` | |
 
-#### 列出所有快捷键，及其对应的 Tmux 命令
+**快捷键**
 
-```bash
-tmux list-keys
-```
+| 操作 | 快捷键 | 说明 |
+|---|---|---|
+| 进入翻页模式 | `Ctrl+b [` | |
+| 退出翻页模式 | `q` | 在翻页模式中按下 |
+| 打开 tmux 命令提示符 | `Ctrl+b :` | 在 tmux 内直接输入管理命令，按 `Enter` 执行 |
+| 取消命令提示符 | `Esc` | |
 
-#### 列出所有 Tmux 命令及其参数
-
-```bash
-tmux list-commands
-```
+> 场景举例：在实时查看日志时，想要交换窗口顺序（默认没有绑定快捷键），可以打开 tmux 命令提示符执行 `swap-window` 命令而无需中断当前进程。
 
 
 ## 个人实践
@@ -191,14 +143,14 @@ tmux list-commands
 
 1. 使用命名会话：方便查找和管理
 2. 使用分离和重连：保持会话连续性
-3. 避免嵌套：在 `tmux` 会话中通过 `SSH` 连接另一个 `tmux` 会话
+3. 避免嵌套：不要在 `tmux` 会话中通过 `SSH` 连接另一个 `tmux` 会话
 
 ### 基础配置
 
 使用 `~/.tmux.conf` 管理配置。
 
 1. 开启鼠标支持：在配置文件中加入 `set -g mouse on`，支持用鼠标点击切换窗格、拖拽调整大小及滚轮查看历史输出。
-2. 版本控制配置文件：将你的 `~/.tmux.conf` 存入 `Git` 仓库进行多机同步。
+2. 版本控制配置文件：将你的 `~/.tmux.conf` 存入 `Git` 仓库进行多机同步。参考 [dotfiles](https://github.com/moralok/dotfiles)。
 
 > 个人没有修改默认前缀键 `Ctrl+b` 为可能更顺手的 `Ctrl+a` 或 `Ctrl+s`；没有在配置文件中加入 `setw -g mode-keys vi` 开启 `vi` 模式并绑定系统剪贴板，**现代终端通常支持选中即复制（Copy on select）**。
 
@@ -217,17 +169,15 @@ tmux list-commands
     - 推荐安装 [tmux-resurrect](https://github.com/tmux-plugins/tmux-resurrect)，手动保存与恢复会话，不惧重启和断电
     - 推荐安装 [tmux-continuum](https://github.com/tmux-plugins/tmux-continuum)，自动备份会话，配合 tmux-resurrect 每 15 分钟后台静默保存
 
-如果服务器发生重启，默认的 `tmux` 会话会全部丢失。
-
-在安装 `tmux-resurrect` 后：
+如果服务器发生重启，默认的 `tmux` 会话会全部丢失。在安装 `tmux-resurrect` 后：
 - 手动保存快照：在 `tmux` 会话中按下快捷键 `Ctrl+b`，然后按 `Ctrl+s`。
 - 手动恢复快照：在 `tmux` 会话中按下快捷键 `Ctrl+b`，然后按 `Ctrl+r`。
 
 如果还安装了 `tmux-continuum`，无需手动恢复。
 
-### 配置文件（仅供参考）。
+### 配置文件（仅供参考）
 
-```shell
+```conf
 # Mouse support
 set -g mouse on
 
@@ -249,14 +199,35 @@ set -g @plugin 'tmux-plugins/tmux-sensible'
 set -g @plugin 'tmux-plugins/tmux-resurrect'
 set -g @plugin 'tmux-plugins/tmux-continuum'
 
-# Continuum: automatic save and restore
-set -g @continuum-save-interval '15'
+# Continuum: automatic save every 15 minutes
+# automatic restore (on startup)
 set -g @continuum-restore 'on'
 
 # Initialize TMUX plugin manager (keep this line at the very bottom of tmux.conf)
 run '~/.tmux/plugins/tpm/tpm'
 ```
 
+
+## 补充说明
+
+### 会话名称和 ID
+
+我之前误以为，（不给定名称）新建会话时系统显示的数字就是会话 ID。其实每个会话都有名称和 ID 两个独立字段；`tmux ls` 默认显示的是名称。可以用下面的命令同时查看两者：
+
+```bash
+tmux list-sessions -F '#{session_name} #{session_id}'
+```
+
+输出中第一列是会话名称，第二列是会话 ID：
+
+```text
+5 $5
+blog $1
+dev $2
+docker $4
+```
+
+第一行的名称 `5` 和 ID `$5` 只是数字恰好相同；它们仍是不同字段。
 
 ## 参考链接
 
