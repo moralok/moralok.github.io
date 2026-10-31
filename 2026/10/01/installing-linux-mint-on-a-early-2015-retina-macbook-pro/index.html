@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222"><meta name="generator" content="Hexo 8.1.2">
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha256-VHqXKFhhMxcpubYf9xiWdCiojEbY9NexQ4jh8AxbvcM=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"www.moralok.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.29.0","exturl":false,"sidebar":{"position":"left","width_expanded":320,"width_dual_column":240,"display":"always","padding":18,"offset":12},"hljswrap":true,"codeblock":{"theme":{"light":"default","dark":"stackoverflow-dark"},"prism":{"light":"prism","dark":"prism-dark"},"copy_button":{"enable":false,"style":null},"fold":{"enable":false,"height":500},"language":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":true,"async":false,"duration":200,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js" defer></script>
+
+    <meta name="description" content="这台 MacBookPro12,1 是 2015 年款的 13 英寸 Retina 屏 MacBook Pro，配置为 i5-5257U、16GB 内存和一块 256GB 的 APPLE SSD SM0256G，系统停留在 macOS Catalina 10.15.7。购买于 2017 年初，大概有将近四年没被认真使用了：不少新版本的软件无法安装，使用时容易发热卡顿。 一直以来没动它，原因比较简单">
+<meta property="og:type" content="article">
+<meta property="og:title" content="在 Early 2015 Retina MacbookPro 上安装 Linux Mint">
+<meta property="og:url" content="https://www.moralok.com/2026/10/01/installing-linux-mint-on-a-early-2015-retina-macbook-pro/index.html">
+<meta property="og:site_name" content="Moralok&#39;s Blog">
+<meta property="og:description" content="这台 MacBookPro12,1 是 2015 年款的 13 英寸 Retina 屏 MacBook Pro，配置为 i5-5257U、16GB 内存和一块 256GB 的 APPLE SSD SM0256G，系统停留在 macOS Catalina 10.15.7。购买于 2017 年初，大概有将近四年没被认真使用了：不少新版本的软件无法安装，使用时容易发热卡顿。 一直以来没动它，原因比较简单">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-01T19:55:01.000Z">
+<meta property="article:modified_time" content="2026-10-31T07:57:34.034Z">
+<meta property="article:author" content="Moralok">
+<meta property="article:tag" content="linux">
+<meta property="article:tag" content="mac">
+<meta property="article:tag" content="mint">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://www.moralok.com/2026/10/01/installing-linux-mint-on-a-early-2015-retina-macbook-pro/">
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://www.moralok.com/2026/10/01/installing-linux-mint-on-a-early-2015-retina-macbook-pro/","path":"2026/10/01/installing-linux-mint-on-a-early-2015-retina-macbook-pro/","title":"在 Early 2015 Retina MacbookPro 上安装 Linux Mint"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>在 Early 2015 Retina MacbookPro 上安装 Linux Mint | Moralok's Blog</title>
+  
+
+
+
+
+
+
+
+
+  
+<script src="/js/utils.js" defer></script><script src="/js/motion.js" defer></script><script src="/js/sidebar.js" defer></script><script src="/js/next-boot.js" defer></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hexo-generator-searchdb/1.5.0/search.js" integrity="sha256-xFC6PJ82SL9b3WkGjFavNiA9gm5z6UBxWPiu4CYjptg=" crossorigin="anonymous" defer></script>
+<script src="/js/third-party/search/local-search.js" defer></script>
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Moralok's Blog</p>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">你在幼年时当快乐</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-links"><a href="/links/" rel="section"><i class="fa fa-link fa-fw"></i>友链</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+      <div class="search-header">
+        <span class="search-icon">
+          <i class="fa fa-search"></i>
+        </span>
+        <div class="search-input-container">
+          <input autocomplete="off" autocapitalize="off" maxlength="80"
+                placeholder="搜索..." spellcheck="false"
+                type="search" class="search-input">
+        </div>
+        <span class="popup-btn-close" role="button">
+          <i class="fa fa-times-circle"></i>
+        </span>
+      </div>
+      <div class="search-result-container">
+        <div class="search-result-icon">
+          <i class="fa fa-spinner fa-pulse fa-5x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%93%E6%A3%80%EF%BC%9A%E5%85%88%E7%A1%AE%E8%AE%A4%E5%AE%83%E4%B8%8D%E4%BC%9A%E8%A3%85%E5%AE%8C%E4%B8%8D%E4%B9%85%E5%B0%B1%E5%9D%8F"><span class="nav-number">1.</span> <span class="nav-text">体检：先确认它不会装完不久就坏</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%94%B5%E6%B1%A0"><span class="nav-number">1.1.</span> <span class="nav-text">电池</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SSD"><span class="nav-number">1.2.</span> <span class="nav-text">SSD</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E3%80%81%E4%B8%BB%E6%9D%BF%E5%92%8C%E6%95%A3%E7%83%AD"><span class="nav-number">1.3.</span> <span class="nav-text">内存、主板和散热</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%A4%E9%A1%B9%E6%B2%A1%E8%83%BD%E6%A3%80%E6%9F%A5%E5%87%BA%E6%9D%A5%E7%9A%84"><span class="nav-number">1.4.</span> <span class="nav-text">两项没能检查出来的</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BD%93%E6%A3%80%E5%B0%8F%E7%BB%93"><span class="nav-number">1.5.</span> <span class="nav-text">体检小结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E5%81%9A%E5%8F%8C%E7%B3%BB%E7%BB%9F"><span class="nav-number">2.</span> <span class="nav-text">为什么不做双系统</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E6%98%AF-Mint-Cinnamon"><span class="nav-number">3.</span> <span class="nav-text">为什么是 Mint Cinnamon</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A4%87%E4%BB%BD%E8%B5%84%E6%96%99"><span class="nav-number">4.</span> <span class="nav-text">备份资料</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8%E7%9B%98%EF%BC%9AWindows-%E4%B8%8A%E7%9A%84-Rufus"><span class="nav-number">5.</span> <span class="nav-text">启动盘：Windows 上的 Rufus</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Live-%E7%8E%AF%E5%A2%83%E9%AA%8C%E8%AF%81%E7%A1%AC%E4%BB%B6"><span class="nav-number">6.</span> <span class="nav-text">Live 环境验证硬件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A1%AE%E8%AE%A4%E5%AE%89%E8%A3%85%EF%BC%9A%E6%95%B4%E7%9B%98%E6%93%A6%E9%99%A4"><span class="nav-number">7.</span> <span class="nav-text">确认安装：整盘擦除</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%84%8F%E5%A4%96%EF%BC%9A%E6%BB%A1%E5%B1%8F-SQUASHFS-%E6%8A%A5%E9%94%99"><span class="nav-number">8.</span> <span class="nav-text">意外：满屏 SQUASHFS 报错</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%B0%E7%B3%BB%E7%BB%9F%E5%9F%BA%E7%BA%BF"><span class="nav-number">9.</span> <span class="nav-text">新系统基线</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A6%E6%8E%A7%E6%9D%BF"><span class="nav-number">9.1.</span> <span class="nav-text">触控板</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BD%AF%E4%BB%B6%EF%BC%9A%E5%8F%AA%E8%A3%85%E5%BD%93%E5%89%8D%E8%A6%81%E7%94%A8%E7%9A%84"><span class="nav-number">10.</span> <span class="nav-text">软件：只装当前要用的</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%8E%B0%E5%9C%A8%E8%BF%99%E5%8F%B0%E6%9C%BA%E5%99%A8%E5%9C%A8%E5%B9%B2%E4%BB%80%E4%B9%88"><span class="nav-number">11.</span> <span class="nav-text">现在这台机器在干什么</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Moralok</p>
+  <div class="site-description" itemprop="description">却要知道，为这一切的事……</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">62</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">53</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/moralok" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;moralok" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://www.moralok.com/2026/10/01/installing-linux-mint-on-a-early-2015-retina-macbook-pro/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Moralok">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Moralok's Blog">
+      <meta itemprop="description" content="却要知道，为这一切的事……">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="在 Early 2015 Retina MacbookPro 上安装 Linux Mint | Moralok's Blog">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          在 Early 2015 Retina MacbookPro 上安装 Linux Mint
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2026-10-02 03:55:01" itemprop="dateCreated datePublished" datetime="2026-10-02T03:55:01+08:00">2026-10-02</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2026-10-31 15:57:34" itemprop="dateModified" datetime="2026-10-31T15:57:34+08:00">2026-10-31</time>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>3.9k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>13 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody"><p>这台 <code>MacBookPro12,1</code> 是 2015 年款的 13 英寸 Retina 屏 MacBook Pro，配置为 i5-5257U、16GB 内存和一块 256GB 的 <code>APPLE SSD SM0256G</code>，系统停留在 <code>macOS Catalina 10.15.7</code>。购买于 2017 年初，大概有将近四年没被认真使用了：不少新版本的软件无法安装，使用时容易发热卡顿。</p>
+<p>一直以来没动它，原因比较简单——担心有些资料没拷出来，或者旧环境哪天要用。</p>
+<p>最近和多位朋友聊到硬件的价格话题，又经常刷到 Mac mini M6 的开箱视频，不免想到这台机器。看着它的二手平均价格仅大约550元-750元，而 Time Machine 占用的 PSSD T7 大约1000元，越想越膈应。10 月 1 日心血来潮，下决心抹盘安装 Linux。</p>
+<p>很幸运没踩大坑很快就安装完了，整体顺序如下：</p>
+<ol>
+<li>先<strong>体检</strong>，确认这台机器的硬件还健康，值得折腾；</li>
+<li>再备份，把可能有价值的文件再次整理备份；</li>
+<li>然后制作启动盘、进 Live 环境<strong>验证硬件</strong>；</li>
+<li>最后擦掉 macOS 安装 Linux Mint。</li>
+</ol>
+<blockquote>
+<p>整个过程是相对谨慎地边查资料边和 ChatGPT 对话确认每一步的。</p>
+</blockquote>
+<span id="more"></span>
+
+<h2 id="体检：先确认它不会装完不久就坏"><a href="#体检：先确认它不会装完不久就坏" class="headerlink" title="体检：先确认它不会装完不久就坏"></a>体检：先确认它不会装完不久就坏</h2><p>最怕的不是装不上，而是装完没几天机器废了。所以在 macOS 上先用系统自带的工具把关键部件检查一遍。</p>
+<h3 id="电池"><a href="#电池" class="headerlink" title="电池"></a>电池</h3><figure class="highlight console"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">system_profiler SPPowerDataType</span></span><br><span class="line">      Charge Remaining (mAh): 4793</span><br><span class="line">      Full Charge Capacity (mAh): 5346</span><br><span class="line">      Cycle Count: 510</span><br><span class="line">      Condition: Service Recommended</span><br></pre></td></tr></table></figure>
+
+<p>510 次循环不算多，满充容量 5346 mAh，按设计容量算大概还有八成。系统评估为 <code>Service Recommended</code> 说明电池确实老了，但这台机器准备长期插电用于 Homelab——2015 年的机器再花一笔钱换电池也不划算，所以这一项不构成阻碍。</p>
+<h3 id="SSD"><a href="#SSD" class="headerlink" title="SSD"></a>SSD</h3><figure class="highlight console"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">diskutil info disk0</span></span><br><span class="line">   Device / Media Name:       APPLE SSD SM0256G</span><br><span class="line">   Protocol:                  PCI</span><br><span class="line">   SMART Status:              Verified</span><br></pre></td></tr></table></figure>
+
+<p>系统评估为 <code>SMART Status: Verified</code>，说明硬盘没有故障。</p>
+<p>文件系统另外检查一遍：</p>
+<figure class="highlight console"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">diskutil verifyVolume disk1</span></span><br><span class="line">Checking snapshot 1 of 2 (com.apple.TimeMachine.2023-07-20-232507.local)</span><br><span class="line">error: Cross Check : Mismatch between extentref entry reference count (1)</span><br><span class="line">and calculated fsroot entry reference count (0) for extent (0x1c890c2 + 1)</span><br><span class="line">Checking snapshot 2 of 2 (com.apple.TimeMachine.2026-09-28-170833.local)</span><br><span class="line">...</span><br><span class="line">Verifying allocated space</span><br><span class="line">The volume /dev/disk0s2 appears to be OK</span><br><span class="line">Storage system check exit code is 0</span><br></pre></td></tr></table></figure>
+
+<p>检查结果 <code>exit code 0</code>，正常。中间有一条 <code>error</code>，是 2023 年一个本地 Time Machine 快照的引用计数对不上。因为要抹盘重装，所以不用 <code>diskutil repairVolume</code> 修复。</p>
+<h3 id="内存、主板和散热"><a href="#内存、主板和散热" class="headerlink" title="内存、主板和散热"></a>内存、主板和散热</h3><p>关机，开机按住 <code>D</code>，进入 <code>Apple Diagnostics</code>，选择语言后自动开始检测。结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">No issues found</span><br></pre></td></tr></table></figure>
+
+<p>内存是焊在主板上的，无法更换，所以这一项特别要紧。</p>
+<p>散热检查：</p>
+<figure class="highlight console"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">pmset -g therm</span></span><br><span class="line">Note: No thermal warning level has been recorded</span><br><span class="line">Note: No performance warning level has been recorded</span><br><span class="line">	CPU_Scheduler_Limit 	= 100</span><br><span class="line">	CPU_Available_CPUs 	= 4</span><br><span class="line">	CPU_Speed_Limit 	= 100</span><br></pre></td></tr></table></figure>
+
+<p>没有历史热保护记录，CPU 也没有被降频，100 代表满血。</p>
+<h3 id="两项没能检查出来的"><a href="#两项没能检查出来的" class="headerlink" title="两项没能检查出来的"></a>两项没能检查出来的</h3><p><code>system_profiler SPNVMeDataType</code> 没有任何输出。这台机器的 SSD 是 Apple 定制的 PCIe 盘，在 Catalina 下拿不到写入量、剩余寿命这类细节。想要确认可以安装第三方工具。</p>
+<p><code>diskutil apfs list</code> 查看空间：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Size (Capacity Ceiling):      250790436864 B (250.8 GB)</span><br><span class="line">Capacity In Use By Volumes:   192571699200 B (192.6 GB) (76.8% used)</span><br><span class="line">Capacity Not Allocated:       58218737664 B (58.2 GB) (23.2% free)</span><br></pre></td></tr></table></figure>
+
+<p>用了 76.8%，剩 58.2GB，这个结果可以用于评估“要不要采用双系统”。</p>
+<blockquote>
+<p>对我个人而言这一项缺乏参考价值，所有软件和文件都被我视为可以清理。</p>
+</blockquote>
+<h3 id="体检小结"><a href="#体检小结" class="headerlink" title="体检小结"></a>体检小结</h3><table>
+<thead>
+<tr>
+<th>部件</th>
+<th>结果</th>
+<th>判断</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>电池</td>
+<td>510 次循环 &#x2F; 5346 mAh &#x2F; Service Recommended</td>
+<td>可用，长期插电</td>
+</tr>
+<tr>
+<td>SSD</td>
+<td>SMART Verified</td>
+<td>无故障迹象</td>
+</tr>
+<tr>
+<td>APFS</td>
+<td>exit code 0，有一个快照引用计数 error</td>
+<td>可用，未修复</td>
+</tr>
+<tr>
+<td>内存 &#x2F; 主板</td>
+<td>Apple Diagnostics: No issues found</td>
+<td>正常</td>
+</tr>
+<tr>
+<td>散热 &#x2F; 降频</td>
+<td>无 thermal warning，CPU 100%</td>
+<td>正常</td>
+</tr>
+</tbody></table>
+<h2 id="为什么不做双系统"><a href="#为什么不做双系统" class="headerlink" title="为什么不做双系统"></a>为什么不做双系统</h2><p>ChatGPT 最初提供的方案里是有双系统的：留 80~100GB 给 macOS，剩下的给 Linux。还有更保守的做法——把 Linux 装在外置 SSD 上。</p>
+<p>两个我都没选，甚至可以说我几乎没有认真考虑过它们。一个很重要的原因是我不想双系统的另一半是一个过于陈旧的 macOS，或者是 <code>OCLP</code> 强制升级得到的有风险的 macOS。</p>
+<p>这台机器闲置了四年，安装 Linux 的重要目的之一就是让它作为 24 小时开机的服务器重新被利用起来。即使最后失败，也可以通过内嵌的“在线恢复模式”重新安装 macOS 挽救。</p>
+<blockquote>
+<p>使用一个月以后再回头看，抛开双系统可能存在的其他风险，就硬盘空间而言是完全够用的，容纳一个临时备用的 macOS 好像也不错。</p>
+</blockquote>
+<h2 id="为什么是-Mint-Cinnamon"><a href="#为什么是-Mint-Cinnamon" class="headerlink" title="为什么是 Mint Cinnamon"></a>为什么是 Mint Cinnamon</h2><p>真正进入候选的其实就 3 个：长期使用、相对熟悉的 Ubuntu、仅在云服务器上偶尔使用的 Debian、一眼相中名字的 Mint。</p>
+<p>我既想要尝点鲜，又不想太过“冒险”，不谈能不能习惯，万一硬件或驱动有问题就很麻烦，我希望它稳定。桌面性能开销不能太大，但也不必为了节省内存过度牺牲桌面体验。</p>
+<p>最后版本选的是 Linux Mint 22.3 Cinnamon（代号 Zena），基于 Ubuntu 24.04，内核 6.14。</p>
+<p>这一步没有花太多时间纠结，事后看也没错——装完之后除了触控板手势，几乎没有什么需要回头折腾的地方。</p>
+<h2 id="备份资料"><a href="#备份资料" class="headerlink" title="备份资料"></a>备份资料</h2><p>这台机器上的资料在多年前早已备份过一次，所以这次只是上了第二道保险。</p>
+<p>拷完以后随机打开几个文件验证：私有 <code>jar</code> 能使用，配置文件能读，旧项目代码能打开。</p>
+<blockquote>
+<p><strong>检查比备份本身更重要，如果复制了一堆打不开的文件等于没备份。</strong></p>
+</blockquote>
+<h2 id="启动盘：Windows-上的-Rufus"><a href="#启动盘：Windows-上的-Rufus" class="headerlink" title="启动盘：Windows 上的 Rufus"></a>启动盘：Windows 上的 Rufus</h2><p>启动盘是在 Windows 上做的。Mac 上也能做（<code>dd</code> 或者 <code>balenaEtcher</code>），但 <code>Rufus</code> 是图形化界面，出错的空间更小。</p>
+<p>镜像下载 Linux Mint 22.3 Cinnamon 的 ISO。Rufus 里的设置：</p>
+<table>
+<thead>
+<tr>
+<th>选项</th>
+<th>取值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>设备</td>
+<td>U 盘</td>
+</tr>
+<tr>
+<td>引导类型选择</td>
+<td>Linux Mint 22.3 Cinnamon ISO</td>
+</tr>
+<tr>
+<td>分区类型</td>
+<td>GPT</td>
+</tr>
+<tr>
+<td>目标系统</td>
+<td>UEFI（非 CSM）</td>
+</tr>
+<tr>
+<td>卷标</td>
+<td>默认</td>
+</tr>
+<tr>
+<td>文件系统</td>
+<td>FAT32（默认）</td>
+</tr>
+<tr>
+<td>簇大小</td>
+<td>16K（默认）</td>
+</tr>
+</tbody></table>
+<p>写入过程中 <code>Rufus</code> 提示过一次“另一程序正在使用此驱动器，仍然要格式化它吗”。这是 Windows 那边有进程占着 U 盘，<code>Rufus</code> 要先解除占用再重新格式化。确认选中的确实是那根 U 盘，不是电脑硬盘，然后确认。</p>
+<blockquote>
+<p>写模式选 <code>ISO Image mode</code>，写完状态变成就绪后点“关闭”——不是再点一次“开始”，那会重写一遍。</p>
+</blockquote>
+<h2 id="Live-环境验证硬件"><a href="#Live-环境验证硬件" class="headerlink" title="Live 环境验证硬件"></a>Live 环境验证硬件</h2><p>U 盘插进 MacbookPro，关机，开机时立刻按住 <code>Option</code>，启动盘选择界面里会出现 <code>EFI Boot</code>，进去之后是 GRUB：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">*Start Linux Mint 22.3 Cinnamon 64-bit</span><br><span class="line"> Start Linux Mint 22.3 Cinnamon 64-bit (compatibility mode)</span><br><span class="line"> OEM install (for manufacturers)</span><br><span class="line"> Boot from next volume</span><br><span class="line"> UEFI Firmware Settings</span><br><span class="line"> Memory test</span><br></pre></td></tr></table></figure>
+
+<p>第一项就是 Live 模式——系统从 U 盘运行，不修改内部硬盘。<code>compatibility mode</code> 是普通模式无法使用时的备选，其余选项跟这次无关。</p>
+<p>在 Live 桌面里把该测试的都测试一遍，这是最后一次不付出代价的检查机会：</p>
+<ul>
+<li>Wi-Fi：Broadcom BCM43602 直接就能连，不用装任何驱动</li>
+<li>触控板：移动、单击、双指滚动、双指右键都正常；双指缩放没有，三指四指手势也没有；双指滚动有点跳，偏快</li>
+<li>键盘：每一个按键都有反应</li>
+<li>声音、屏幕（2560×1600）、蓝牙、睡眠唤醒：都正常</li>
+<li>USB：没额外 U 盘，用外置硬盘试的，能识别</li>
+<li>温度：<code>sensors</code> 读到 44°C</li>
+</ul>
+<p>Broadcom 无线网卡是这台机器装 Linux 最大的不确定项，网上不少 2015 款 MacBook 的驱动在新内核上编译不过。它在这里直接走 <code>brcmfmac</code> 起来了，这一条过掉之后，剩下的都算小事。</p>
+<blockquote>
+<p>触控板那两个问题当时判断可以先不管：Live 环境从 U 盘跑，I&#x2F;O 慢，滚动卡顿可能有一部分是环境造成的；捏合缩放和手势在桌面环境层面本来就不一定有。</p>
+</blockquote>
+<h2 id="确认安装：整盘擦除"><a href="#确认安装：整盘擦除" class="headerlink" title="确认安装：整盘擦除"></a>确认安装：整盘擦除</h2><p>安装程序里的语言选择 English。</p>
+<p>好处是命令输出、日志、报错、文档基本都是英文，遇到问题直接拿报错去搜，界面标签和路径能对上。<br>另一个顾虑是中文环境会把家目录变成“桌面”“文档”“下载”，平时 <code>cd</code>、<code>find</code>、写脚本都要多处理一层路径问题。<br>中文输入法可以装完系统之后再单独加，不影响使用。</p>
+<p>安装类型选 <code>Erase disk and install Linux Mint</code>，没有手动分区。</p>
+<blockquote>
+<p>这里有一个容易出错的地方：从 U 盘启动时，安装程序同时能看到内部 SSD 和 U 盘。引导器（boot loader）必须装到内部 SSD 上，确认目标磁盘是那个约 256GB 的设备再继续。</p>
+</blockquote>
+<p>分区交给安装程序自己处理，结果是：</p>
+<figure class="highlight console"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">lsblk -f</span></span><br><span class="line">NAME   FSTYPE FSVER LABEL  UUID                                 FSAVAIL FSUSE% MOUNTPOINTS</span><br><span class="line">sda</span><br><span class="line">├─sda1 vfat   FAT32        EDEA-851C                             504.8M     1% /boot/efi</span><br><span class="line">└─sda2 ext4   1.0          90764f1c-d436-4901-9069-e5701f0f9181  207.5G     4% /</span><br></pre></td></tr></table></figure>
+
+<p>一个 505MB 的 EFI 分区加一个 207.5GB 的根分区，另外自动建了一个 2GiB 的 <code>/swapfile</code>。16GB 内存的机器，swap 这样够用，没必要再调整。</p>
+<h2 id="意外：满屏-SQUASHFS-报错"><a href="#意外：满屏-SQUASHFS-报错" class="headerlink" title="意外：满屏 SQUASHFS 报错"></a>意外：满屏 SQUASHFS 报错</h2><p>在安装完之后没有先点 <code>Restart Now</code>，而是先把 U 盘拔了，然后重启。结果是满屏刷报错：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">SQUASHFS error: Unable to read fragment cache entry [637a742a]</span><br><span class="line">SQUASHFS error: Unable to read page, block 637a742a, size 8154</span><br><span class="line">I/O error, dev loop0, sector 2299792 op 0x0: (READ) flags 0x800</span><br><span class="line">SQUASHFS error: Failed to read block 0x462ecf32: -5</span><br></pre></td></tr></table></figure>
+
+<p>当时第一反应是内部 SSD 出了问题——刚装完就坏，这是最坏的情况。</p>
+<p>经分析，<code>squashfs</code> 是 Live 镜像内部压缩文件系统，<code>loop0</code> 是 U 盘上的镜像文件挂出来的虚拟块设备，这两个东西都在 U 盘这一侧。报错说明系统还在读 U 盘，而 U 盘已经被拔掉，读不到了。</p>
+<p>处理方案：长按电源键强制关机，确认 U 盘已经拔掉，正常开机。Mint 从内部 SSD 正常启动，登录进去看 <code>lsblk -f</code> 的输出正常，说明安装本身是成功的。</p>
+<h2 id="新系统基线"><a href="#新系统基线" class="headerlink" title="新系统基线"></a>新系统基线</h2><p>第一次启动后先没有装任何软件，只用 <code>inxi -Fxxxz</code> 把系统状态记下来。节选：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">System:</span><br><span class="line">  Kernel: 6.14.0-37-generic arch: x86_64</span><br><span class="line">  Desktop: Cinnamon v: 6.6.9 tk: GTK v: 3.24.41 wm: Muffin v: 6.6.3</span><br><span class="line">    dm: LightDM v: 1.30.0 Distro: Linux Mint 22.3 Zena base: Ubuntu 24.04 noble</span><br><span class="line">Machine:</span><br><span class="line">  Type: Laptop System: Apple product: MacBookPro12,1 v: 1.0</span><br><span class="line">    UEFI: Apple v: 428.60.3.0.0 date: 10/27/2021</span><br><span class="line">Battery:</span><br><span class="line">  ID-1: BAT0 charge: 36.9 Wh (62.4%) condition: 59.1/74.8 Wh (79.1%) cycles: 511</span><br><span class="line">CPU:</span><br><span class="line">  Info: dual core model: Intel Core i5-5257U</span><br><span class="line">Graphics:</span><br><span class="line">  Device-1: Intel Iris Graphics 6100 vendor: Apple driver: i915</span><br><span class="line">  Monitor-1: eDP-1 model: Apple Color LCD res: 2560x1600 hz: 60</span><br><span class="line">Audio:</span><br><span class="line">  Device-1: Intel Broadwell-U Audio driver: snd_hda_intel</span><br><span class="line">  Server-1: PipeWire v: 1.0.5 status: active</span><br><span class="line">Network:</span><br><span class="line">  Device-1: Broadcom BCM43602 802.11ac Wireless LAN SoC driver: brcmfmac</span><br><span class="line">Drives:</span><br><span class="line">  ID-1: /dev/sda vendor: Apple model: SSD SM0256G size: 233.76 GiB scheme: GPT</span><br><span class="line">Sensors:</span><br><span class="line">  System Temperatures: cpu: 53.0 C pch: 53.5 C</span><br><span class="line">Info:</span><br><span class="line">  Memory: total: 16 GiB available: 15.52 GiB</span><br></pre></td></tr></table></figure>
+
+<p>几个值得注意的点：</p>
+<ul>
+<li>电池在 Linux 下的读数是 59.1&#x2F;74.8 Wh，79.1%，511 次循环，跟 macOS 报的八成对得上。</li>
+<li>无线网卡走 <code>brcmfmac</code>，蓝牙走 <code>btusb</code>，声卡 <code>snd_hda_intel</code> 加 PipeWire，显卡 <code>i915</code>——这些是老 Mac 装 Linux 最容易出问题的地方，一个都没用额外驱动。</li>
+<li>CPU 53°C。比 Live 环境的 44°C 高，但两次的运行时间、负载、后台任务都不一样，不能直接比较；这个温度对 Broadwell 的双核来说正常。</li>
+<li>内存 15.52 GiB 可用，缺的那部分是核显占用，16GB 没有跑满。</li>
+</ul>
+<h3 id="触控板"><a href="#触控板" class="headerlink" title="触控板"></a>触控板</h3><p><code>xinput list</code> 里能看到一块 <code>bcm5974</code>，这是 MacBook 触控板在 Linux 下的专用输入驱动，由 libinput 接管：</p>
+<figure class="highlight console"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_">$ </span><span class="language-bash">xinput list-props 9</span></span><br><span class="line">	libinput Natural Scrolling Enabled (306):	1</span><br><span class="line">	libinput Tapping Enabled (335):	1</span><br><span class="line">	libinput Tapping Drag Enabled (337):	1</span><br><span class="line">	libinput Disable While Typing Enabled (343):	1</span><br><span class="line">	libinput Scroll Method Enabled (309):	1, 0, 0</span><br><span class="line">	libinput Scrolling Pixel Distance (332):	15</span><br><span class="line">	libinput High Resolution Wheel Scroll Enabled (334):	1</span><br></pre></td></tr></table></figure>
+
+<p>自然滚动、轻点即点、轻点拖动、打字时禁用触控板都是开着的；<code>Scroll Method Enabled: 1, 0, 0</code> 对应双指滚动启用、边缘滚动和按键滚动关闭；滚动步长是 15 像素。</p>
+<p>所以 Live 里感觉到的“跳”不是因为误用了边缘滚动或者第三方驱动，就是这个 15px 的步进配合高分辨率滚轮。Cinnamon 里没有捏合缩放的开关，<code>gsettings list-recursively org.cinnamon.desktop.peripherals.touchpad</code> 列出的键里也没有对应项——捏合通常由具体应用自己处理，不是系统级手势。</p>
+<blockquote>
+<p>两条终端常用操作：复制是 <code>Ctrl+Shift+C</code>，粘贴是 <code>Ctrl+Shift+V</code>（因为 <code>Ctrl+C</code> 在终端里是中断命令）；另外 Linux 支持“选中即复制”，鼠标选中之后用中键就能粘贴。</p>
+</blockquote>
+<h2 id="软件：只装当前要用的"><a href="#软件：只装当前要用的" class="headerlink" title="软件：只装当前要用的"></a>软件：只装当前要用的</h2><p>当前定位：这台机器不是 WSL 的复制品，也不是第二台主力开发机，而是一台闲置四年、重新启用的独立 Linux 机器。</p>
+<p>第一批只考虑安装了 Git、VS Code 和 Mihomo。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">sudo apt update</span><br><span class="line">sudo apt install git</span><br><span class="line">git config --global user.name <span class="string">&quot;...&quot;</span></span><br><span class="line">git config --global user.email <span class="string">&quot;...&quot;</span></span><br></pre></td></tr></table></figure>
+
+<p>Mint 的默认源里没有 VS Code，要先加微软官方源，之后 <code>apt upgrade</code> 也能跟着一起更新。这比下载 <code>.tar.gz</code> 自己解压、自己管 PATH、自己管更新干净得多，卸载也只要 <code>apt remove code</code>。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">sudo apt update</span><br><span class="line">sudo apt install wget gpg</span><br><span class="line"></span><br><span class="line">wget -qO- https://packages.microsoft.com/keys/microsoft.asc \</span><br><span class="line">  | gpg --dearmor \</span><br><span class="line">  | sudo <span class="built_in">tee</span> /usr/share/keyrings/packages.microsoft.gpg &gt; /dev/null</span><br><span class="line"></span><br><span class="line"><span class="built_in">echo</span> <span class="string">&quot;deb [arch=amd64 signed-by=/usr/share/keyrings/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main&quot;</span> \</span><br><span class="line">  | sudo <span class="built_in">tee</span> /etc/apt/sources.list.d/vscode.list &gt; /dev/null</span><br><span class="line"></span><br><span class="line">sudo apt update</span><br><span class="line">sudo apt install code</span><br></pre></td></tr></table></figure>
+
+<h2 id="现在这台机器在干什么"><a href="#现在这台机器在干什么" class="headerlink" title="现在这台机器在干什么"></a>现在这台机器在干什么</h2><p>安装 <code>Docker</code> 之后，我花了几天时间，把 Homelab 里原本跑在虚拟机上的几个服务陆续搬了过来，又接上 GitHub Self-hosted Runners 做自动部署。顺带装了 <code>tmux</code>、<code>starship</code>、<code>btop</code> 和几个可有可无的小工具。</p>
+<p>大多数时候我是 <code>ssh</code> 连接使用，很少打开屏幕登录桌面。所以那些没配好的地方——三指四指手势、捏合缩放、双指滚动那点“跳”——就一直没去调。甚至中文输入法都没有安装。用得少，也就不觉得是个问题。</p>
+<p>回头看，有两件事印象比较深。一件是桌面 Linux 的安装越来越省心：<code>Rufus</code> 写完盘，Live 环境里试一圈再点几下，分区、引导、驱动基本上都由安装程序和内核自己处理好了。另一件是在这种步骤多、风险分散、但每一步都能验证的事情上，AI 确实好用。我敢说动手就动手的底气，大半来自它把整件事拆成了可以验证的步骤：哪些信息要查、哪些资料要备份、哪一步不可逆、万一失手怎么兜底。抹盘看起来是唯一的单向操作，但 macOS 的在线恢复模式还留着后路，真装砸了也能把系统恢复回来。想清楚这一层，那个按钮按下去就没那么难了。何况这台机器本身也比想象中健康——从 2017 年初购买到现在九年多，只有电池被标成 <code>Service Recommended</code>，其余核心部件都还在正常范围内。</p>
+<blockquote>
+<p>润色得有一股不烧心短剧味哈哈哈。</p>
+</blockquote>
+<p>它现在是一台 24 小时开着、随时能 <code>ssh</code> 进去、跑着几个 Homelab 服务的 Linux 机器。这大概是这台 2015 年的 MacBook 这几年最好的状态。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/linux/" rel="tag"># linux</a>
+              <a href="/tags/mint/" rel="tag"># mint</a>
+              <a href="/tags/mac/" rel="tag"># mac</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2025/01/20/using-gdb/" rel="prev" title="使用 GDB">
+                  <i class="fa fa-angle-left"></i> 使用 GDB
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2026/10/11/vaultwarden-backup-smtp-troubleshooting/" rel="next" title="Vaultwarden Backup 邮件通知排障：代理、认证与容器测试">
+                  Vaultwarden Backup 邮件通知排障：代理、认证与容器测试 <i class="fa fa-angle-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+  <div class="copyright">
+    &copy; 
+    <span itemprop="copyrightYear">2026</span>
+    <span class="with-love">
+      <i class="fa fa-heart"></i>
+    </span>
+    <span class="author" itemprop="copyrightHolder">Moralok</span>
+  </div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">170k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">9:26</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+  <div class="sidebar-dimmer"></div>
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+</body>
+</html>
